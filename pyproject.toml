@@ -2,6 +2,11 @@
 pid = "undefined"
 version = "1.4.0"
 
+[cubi.workflow.template]
+pid = "undefined"
+system = "smk"
+version = "1.2.0"
+
 [tool.black]
 line-length = 88
 
