@@ -7,6 +7,11 @@ pid = "undefined"
 system = "smk"
 version = "1.2.0"
 
+[cubi.workflow]
+pid = "undefined"
+name="vcf-annotation"
+version = "prototype"
+
 [tool.black]
 line-length = 88
 
