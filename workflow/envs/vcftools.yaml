@@ -1,0 +1,6 @@
+name: vcftools
+dependencies:
+  - vembrane=1.0.3
+  - bcftools=1.17
+  - xopen=1.7.*
+  - pandas=2.0.*

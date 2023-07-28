@@ -1,4 +1,16 @@
 
+# the first step of the pipeline
+# is "bcftools norm" that also
+# checks the reference allele;
+# specify here how mismatches
+# between vcf and the reference
+# FASTA should be handled
+# s - [s]et to ref FASTA
+# e - [e]xit immediately
+# w - [w]arning
+# x - e[x]clude records
+vcf_norm_ref_action: s
+
 # Config options to use reference container
 # as part of the pipeline
 use_reference_container: false
