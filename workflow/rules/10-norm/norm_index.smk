@@ -5,33 +5,34 @@ rule normalize_variant_calls:
     are mutually exclusive (undocumented in CLI help)
     """
     input:
-        vcf = lambda wildcards: SAMPLE_CALLSET_MAP[(wildcards.sample, wildcards.callset)],
+        vcf = lambda wildcards: SAMPLE_CALLSET_MAP[(wildcards.sample, wildcards.callset, wildcards.ref)],
         tbi = lambda wildcards: pathlib.Path(
-            SAMPLE_CALLSET_MAP[(wildcards.sample, wildcards.callset)]
+            SAMPLE_CALLSET_MAP[(wildcards.sample, wildcards.callset, wildcards.ref)]
         ).with_suffix(".gz.tbi"),
         ref = lambda wildcards: DIR_GLOBAL_REF.joinpath(
-            REF_GENOME_FOR_CALLSET[(wildcards.sample, wildcards.callset)]["fasta"]
+            REFERENCE_GENOMES[wildcards.ref]["fasta"]
         ),
     output:
         vcf = DIR_PROC.joinpath(
-            "10-norm/{sample}.{callset}.norm-idx.vcf.gz"
+            "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-norm/{sample}.{callset}.norm-idx.vcf.gz.tbi"
+            "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz.tbi"
         ),
         tsv = DIR_RES.joinpath(
-            "aux", "record_index", "{sample}.{callset}.idx.tsv.gz"
+            "aux", "record_index", "{sample}.{callset}.{ref}.idx.tsv.gz"
         ),
         json = DIR_RES.joinpath(
-            "aux", "record_index", "{sample}.{callset}.idx.json"
+            "aux", "record_index", "{sample}.{callset}.{ref}.idx.json"
         )
     log:
         DIR_LOG.joinpath(
-            "10-norm", "{sample}.{callset}.norm-idx.bcftools.log"
+            "10-norm", "{sample}.{callset}.{ref}.norm-idx.bcftools.log"
         )
     wildcard_constraints:
         sample = CONSTRAINT_SAMPLES,
-        callset = CONSTRAINT_CALLSETS
+        callset = CONSTRAINT_CALLSETS,
+        ref = CONSTRAINT_REFS
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
     threads: CPU_LOW
@@ -41,7 +42,7 @@ rule normalize_variant_calls:
         script = find_script("build_vcf_name_index"),
         action = VCF_NORM_REF_ACTION
     shell:
-        "bcftools norm --threads {threads} --atomize --atom-overlaps . "
+        "bcftools norm --threads {threads} "
             "--check-ref {params.action} --fasta-ref {input.ref} "
             "--multiallelics -any --multi-overlaps . "
             "--output-type v {input.vcf} 2> {log}"
@@ -65,5 +66,6 @@ rule run_normalize_all_callsets:
             rules.normalize_variant_calls.output.vcf,
             get_sample_callset_wildcards,
             sample=SAMPLES,
-            callset=CALLSETS
+            callset=CALLSETS,
+            ref=REFERENCES
         )

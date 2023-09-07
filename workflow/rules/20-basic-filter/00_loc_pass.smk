@@ -2,25 +2,29 @@
 rule keep_all_pass_in_regions:
     input:
         vcf = DIR_PROC.joinpath(
-            "10-norm/{sample}.{callset}.norm-idx.vcf.gz"
+            "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-norm/{sample}.{callset}.norm-idx.vcf.gz.tbi"
+            "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz.tbi"
         ),
         keep_chroms = DIR_PROC.joinpath(
-            "00-prepare/ref_chroms/{sample}.{callset}.keep-chroms.txt"
+            "00-prepare/ref_chroms/{ref}.keep-chroms.txt"
         ),
     output:
         vcf = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/{sample}.{callset}.loc-pass.vcf.gz"
+            "20-basic-filter/{sample}/00_loc_pass/{sample}.{callset}.{ref}.loc-pass.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/{sample}.{callset}.loc-pass.vcf.gz.tbi"
+            "20-basic-filter/{sample}/00_loc_pass/{sample}.{callset}.{ref}.loc-pass.vcf.gz.tbi"
         ),
     log:
         DIR_LOG.joinpath(
-            "10-filter/00_loc_pass/{sample}.{callset}.keep-loc-pass.vembrane.log"
+            "20-basic-filter/00_loc_pass/{sample}.{callset}.{ref}.keep-loc-pass.vembrane.log"
         )
+    wildcard_constraints:
+        sample = CONSTRAINT_SAMPLES,
+        callset = CONSTRAINT_CALLSETS,
+        ref = CONSTRAINT_REFS
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
     resources:
@@ -41,26 +45,26 @@ rule keep_all_pass_in_regions:
 rule exclude_no_pass_outside_regions:
     input:
         vcf = DIR_PROC.joinpath(
-            "10-norm/{sample}.{callset}.norm-idx.vcf.gz"
+            "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-norm/{sample}.{callset}.norm-idx.vcf.gz.tbi"
+            "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz.tbi"
         ),
         keep_chroms = DIR_PROC.joinpath(
-            "00-prepare/ref_chroms/{sample}.{callset}.keep-chroms.txt"
+            "00-prepare/ref_chroms/{sample}.{callset}.{ref}.keep-chroms.txt"
         ),
     output:
         vcf = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/excluded",
-            "{sample}.{callset}.excl-loc-pass.vcf.gz"
+            "20-basic-filter/{sample}/00_loc_pass/excluded",
+            "{sample}.{callset}.{ref}.excl-loc-pass.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/excluded",
-            "{sample}.{callset}.excl-loc-pass.vcf.gz.tbi"
+            "20-basic-filter/{sample}/00_loc_pass/excluded",
+            "{sample}.{callset}.{ref}.excl-loc-pass.vcf.gz.tbi"
         ),
     log:
         DIR_LOG.joinpath(
-            "10-filter/00_loc_pass/{sample}.{callset}.excl-loc-pass.vembrane.log"
+            "20-basic-filter/00_loc_pass/{sample}.{callset}.{ref}.excl-loc-pass.vembrane.log"
         )
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
@@ -85,11 +89,13 @@ rule run_basic_filter_loc_pass:
             rules.keep_all_pass_in_regions.output.vcf,
             get_sample_callset_wildcards,
             sample=SAMPLES,
-            callset=CALLSETS
+            callset=CALLSETS,
+            ref=REFERENCES
         ),
         vcf_excl = expand(
             rules.exclude_no_pass_outside_regions.output.vcf,
             get_sample_callset_wildcards,
             sample=SAMPLES,
-            callset=CALLSETS
+            callset=CALLSETS,
+            ref=REFERENCES
         ),

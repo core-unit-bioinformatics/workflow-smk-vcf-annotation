@@ -2,22 +2,26 @@
 rule keep_variant_genotypes:
     input:
         vcf = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/{sample}.{callset}.loc-pass.vcf.gz"
+            "20-basic-filter/{sample}/00_loc_pass/{sample}.{callset}.{ref}.loc-pass.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/{sample}.{callset}.loc-pass.vcf.gz.tbi"
+            "20-basic-filter/{sample}/00_loc_pass/{sample}.{callset}.{ref}.loc-pass.vcf.gz.tbi"
         ),
     output:
         vcf = DIR_PROC.joinpath(
-            "10-filter/{sample}/10_genotype/{sample}.{callset}.gt-ok.vcf.gz"
+            "20-basic-filter/{sample}/10_genotype/{sample}.{callset}.{ref}.gt-ok.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-filter/{sample}/10_genotype/{sample}.{callset}.gt-ok.vcf.gz.tbi"
+            "20-basic-filter/{sample}/10_genotype/{sample}.{callset}.{ref}.gt-ok.vcf.gz.tbi"
         ),
     log:
         DIR_LOG.joinpath(
-            "10-filter/10_genotype/{sample}.{callset}.keep-gt.vembrane.log"
+            "20-basic-filter/10_genotype/{sample}.{callset}.{ref}.keep-gt.vembrane.log"
         )
+    wildcard_constraints:
+        sample = CONSTRAINT_SAMPLES,
+        callset = CONSTRAINT_CALLSETS,
+        ref = CONSTRAINT_REFS
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
     resources:
@@ -38,23 +42,23 @@ rule keep_variant_genotypes:
 rule exclude_ref_missing_genotypes:
     input:
         vcf = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/{sample}.{callset}.loc-pass.vcf.gz"
+            "20-basic-filter/{sample}/00_loc_pass/{sample}.{callset}.{ref}.loc-pass.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-filter/{sample}/00_loc_pass/{sample}.{callset}.loc-pass.vcf.gz.tbi"
+            "20-basic-filter/{sample}/00_loc_pass/{sample}.{callset}.{ref}.loc-pass.vcf.gz.tbi"
         ),
     output:
         vcf = DIR_PROC.joinpath(
-            "10-filter/{sample}/10_genotype/excluded",
-            "{sample}.{callset}.excl-gt.vcf.gz"
+            "20-basic-filter/{sample}/10_genotype/excluded",
+            "{sample}.{callset}.{ref}.excl-gt.vcf.gz"
         ),
         tbi = DIR_PROC.joinpath(
-            "10-filter/{sample}/10_genotype/excluded",
-            "{sample}.{callset}.excl-gt.vcf.gz.tbi"
+            "20-basic-filter/{sample}/10_genotype/excluded",
+            "{sample}.{callset}.{ref}.excl-gt.vcf.gz.tbi"
         ),
     log:
         DIR_LOG.joinpath(
-            "10-filter/10_genotype/{sample}.{callset}.excl-gt.vembrane.log"
+            "20-basic-filter/10_genotype/{sample}.{callset}.{ref}.excl-gt.vembrane.log"
         )
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
@@ -79,11 +83,13 @@ rule run_basic_filter_genotype:
             rules.keep_variant_genotypes.output.vcf,
             get_sample_callset_wildcards,
             sample=SAMPLES,
-            callset=CALLSETS
+            callset=CALLSETS,
+            ref=REFERENCES
         ),
         vcf_excl = expand(
             rules.exclude_ref_missing_genotypes.output.vcf,
             get_sample_callset_wildcards,
             sample=SAMPLES,
-            callset=CALLSETS
+            callset=CALLSETS,
+            ref=REFERENCES
         ),

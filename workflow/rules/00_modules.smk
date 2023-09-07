@@ -14,3 +14,8 @@ include: "10-norm/norm_index.smk"
 include: "20-basic-filter/vemb_filters.smk"
 include: "20-basic-filter/00_loc_pass.smk"
 include: "20-basic-filter/10_genotype.smk"
+
+include: "30-tabulate/00_convert_vcf.smk"
+include: "30-tabulate/10_vcf_tables.smk"
+
+include: "40-merge/snv.smk"

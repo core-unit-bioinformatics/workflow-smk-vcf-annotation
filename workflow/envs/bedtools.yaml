@@ -1,0 +1,4 @@
+name: bedtools
+dependencies:
+  - bedtools=2.31
+  - pigz=2.6
