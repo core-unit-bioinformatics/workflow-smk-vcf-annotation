@@ -1,7 +1,10 @@
 
+# TODO
+# this is project-specific config
+
 reference_genomes:
   hg38: GRCh38_masked_v2_decoy_excludes_GPRIN2_DUSP22_FANCD2.fasta
-  t2tv2: t2t-chm13-v2.0.fasta
+  t2tv2: GCA_009914755.4_T2T-CHM13v2.0.fasta
 
 reference_chromosomes:
   - chr1
