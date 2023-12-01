@@ -10,6 +10,20 @@ import pandas as pd
 import pysam
 
 
+# See VCF spec. v4.2 / Section 5.4
+# REF ALT Meaning
+# s t[p[ piece extending to the right of p is joined after t
+# s t]p] reverse comp piece extending left of p is joined after t
+# s ]p]t piece extending to the left of p is joined before t
+# s [p[t reverse comp piece extending right of p is joined before t
+CONST_BND_ORIENTATIONS = {
+    ("[", "end"): ("p.SEQ>t.SEQ", "t[p["),
+    ("]", "end"): ("SEQ.p>t.RC[SEQ]", "t]p]"),
+    ("]", "start"): ("SEQ.p>SEQ.t", "]p]t"),
+    ("[", "start"): ("p.SEQ>RC[SEQ].t", "[p[t"),
+}
+
+
 def parse_command_line():
 
     parser = argp.ArgumentParser()
@@ -94,7 +108,8 @@ class Variant:
         "alt_allele_freq",
         "chrom2",
         "chrom2_pos",
-        "bnd_join",
+        "bnd_join_op",  # the operation to perform for breakend joining
+        "bnd_join_vcf",  # the definition as stated in the VCF spec
     )
 
     def __init__(self, sample=None, callset=None, vcf_record=None, var_desc=None):
@@ -135,7 +150,8 @@ class Variant:
                 else:
                     assert self.chrom2 == bnd_spec["chrom2"], f"{self.name}: {self.chrom2} / {bnd_spec}"
                 self.chrom2_pos = bnd_spec["chrom2_pos"]
-                self.bnd_join = bnd_spec["bnd_join"]
+                self.bnd_join_op = bnd_spec["bnd_join_op"]
+                self.bnd_join_vcf = bnd_spec["bnd_join_vcf"]
 
             # start auto-completion
             self.auto_infer_size(ref_allele_length, alt_allele_length)
@@ -207,7 +223,9 @@ class Variant:
             # same reasoning as for symbolic ALTs
             alt_allele = "UNK"
         elif "[" in alt_allele or "]" in alt_allele:
-            chrom2 = re.search("(chr)?[0-9A-Z]+", alt_allele.split(":")[0])
+            # NB: the lookahead here is important to avoid
+            # matching allele specs or N if present
+            chrom2 = re.search("(chr)?[0-9A-Z]+(?=\:)", alt_allele)
             if chrom2 is None:
                 pass
             else:
@@ -216,13 +234,14 @@ class Variant:
             if chrom2_coord is None:
                 raise ValueError(f"Cannot find BND chrom2 coordinates: {alt_allele}")
             chrom2_coord = int(chrom2_coord.group(0))
-            if alt_allele[0] in ["[]"]:
-                join = 21
-            elif alt_allele[-1] in ["[]"]:
-                join = 12
+            if alt_allele[0] in list("[]"):
+                join_type, vcf_rep = CONST_BND_ORIENTATIONS[(alt_allele[0], "start")]
+            elif alt_allele[-1] in list("[]"):
+                join_type, vcf_rep = CONST_BND_ORIENTATIONS[(alt_allele[-1], "end")]
             else:
-                join = 0
-            if join == 0:
+                join_type = "UNK"
+                vcf_rep = "UNK"
+            if join_type == "UNK":
                 alt_allele = "UNK"
             else:
                 alt_allele = "SEQ"
@@ -230,7 +249,8 @@ class Variant:
             bnd_spec = {
                 "chrom2": chrom2,
                 "chrom2_pos": chrom2_coord,
-                "bnd_join": join
+                "bnd_join_op": join_type,
+                "bnd_join_vcf": vcf_rep
             }
         else:
             alt_allele = alt_allele.upper()
@@ -263,7 +283,12 @@ class Variant:
             assert ref_length is None or alt_length is None
             self.size = self.end - self.start
             # can the above cause OBO ?
-        assert self.size is not None and self.size > 0
+        if self.size == 0 and self.vartype == "BND":
+            # a region in the output BED-like TSV table
+            # always has a minimal size of at least 1,
+            # so adopt that here for breakends
+            self.size = 1
+        assert self.size is not None and self.size > 0, f"size affert file: {self}"
         return
 
     def auto_infer_vartype(self, ref_length, alt_length):
@@ -313,7 +338,8 @@ class Variant:
                 if self.vartype != "BND":
                     self.chrom2 = "NA"
                     self.chrom2_pos = -1
-                    self.bnd_join = 0
+                    self.bnd_join_op = "NA"
+                    self.bnd_join_vcf = "NA"
                     continue
                 else:
                     # cuteSV can report a BND w/o any additional info;
@@ -321,7 +347,8 @@ class Variant:
                     # but it is what it is
                     self.chrom2 = "chrN"
                     self.chrom2_pos = -1
-                    self.bnd_join = 0
+                    self.bnd_join_op = "UNK"
+                    self.bnd_join_vcf = "UNK"
                     continue
             if slot == "read_depth":
                 assert self.ref_allele_depth is not None and self.alt_allele_depth is not None
@@ -344,7 +371,8 @@ class Variant:
                 # other break is on the chromosome 2
                 # but it is what it is ...
                 self.chrom2_pos = -1
-                self.bnd_join = 0
+                self.bnd_join_op = "UNK"
+                self.bnd_join_vcf = "UNK"
                 continue
             raise ValueError(f"Unset variant descriptor with no default: {slot} / {self}")
         return

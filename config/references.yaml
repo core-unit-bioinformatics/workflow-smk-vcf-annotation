@@ -26,5 +26,5 @@ reference_chromosomes:
   - chr20
   - chr21
   - chr22
-  - chrX
+#  - chrX
 #  - chrY

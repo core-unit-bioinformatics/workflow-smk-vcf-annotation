@@ -8,6 +8,8 @@ rule write_ref_chrom_lists:
         listing = DIR_PROC.joinpath(
             "00-prepare/ref_chroms/{ref}.keep-chroms.txt"
         ),
+    wildcard_constraints:
+        ref=CONSTRAINT_REFERENCES
     run:
         ref_chroms = config["reference_chromosomes"]
         # TODO support var sets

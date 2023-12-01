@@ -1,56 +1,81 @@
 import pathlib
 
+import pandas
+
 SAMPLES = set()
 CALLSETS = set()
 SAMPLE_CALLSET_MAP = dict()
 SAMPLE_CALLSET_WILDCARDS = []
-SAMPLE_CALLSET_REF_WILDCARDS = dict()
 
-REFERENCE_GENOMES = dict()
-for ref_id, ref_fasta in config["reference_genomes"].items():
-    fasta_suffx = pathlib.Path(ref_fasta).suffix
-    ref_infos = {
-        "tag": ref_id,
-        "fasta": ref_fasta,
-        "faidx": pathlib.Path(ref_fasta).with_suffix(f"{fasta_suffx}.fai")
-    }
-    REFERENCE_GENOMES[ref_id] = ref_infos
 
-input_path = pathlib.Path("/home/ebertp/work/projects/seq3105/data/callsets")
+def parse_sample_sheet():
 
-callsets = input_path.glob("*.vcf.gz")
+    sample_sheet = pandas.read_csv(
+        SAMPLE_SHEET_PATH,
+        sep="\t", header=0,
+        comment="#"
+    )
 
-for callset_vcf in callsets:
-    assert callset_vcf.with_suffix(".gz.tbi").is_file()
-    typed_sample = callset_vcf.name.split("_")[0]
-    assert typed_sample[-1] in ["t", "b"]
-    biotype = "tumor" if typed_sample[-1] == "t" else "blood"
-    sample = typed_sample[:-1]
-    callset_id = callset_vcf.name.rsplit(".", 2)[0]
-    callset_id_parts = callset_id.split(".")
-    callset_id = ".".join([callset_id_parts[1], callset_id_parts[3]])
-    callset_ref = callset_id_parts[2]
-    callset_id = f"{biotype}.{callset_id}"
+    global SAMPLES
+    global CALLSETS
+    global SAMPLE_CALLSET_MAP
+    global SAMPLE_CALLSET_WILDCARDS
 
-    SAMPLES.add(sample)
-    CALLSETS.add(callset_id)
-    SAMPLE_CALLSET_MAP[(sample, callset_id, callset_ref)] = callset_vcf
+    for row in sample_sheet.itertuples():
+        vcf_path = pathlib.Path(row.input_path).resolve(strict=True)
+        tbi_path = pathlib.Path(row.input_path).with_suffix(".gz.tbi").resolve(strict=True)
 
-    wc_comb = {
-        "sample": sample,
-        "callset": callset_id,
-        "ref": callset_ref
-    }
-    SAMPLE_CALLSET_WILDCARDS.append(wc_comb)
+        sample = row.sample
+        callset_id = row.callset_id
+        callset_ref = row.callset_ref
 
-SAMPLES = sorted(SAMPLES)
-CALLSETS = sorted(CALLSETS)
-REFERENCES = sorted(REFERENCE_GENOMES.keys())
+        SAMPLES.add(sample)
+        CALLSETS.add(callset_id)
+        SAMPLE_CALLSET_MAP[(sample, callset_id, callset_ref)] = vcf_path
+        SAMPLE_CALLSET_MAP[(sample, callset_id, callset_ref, "vcf")] = vcf_path
+        SAMPLE_CALLSET_MAP[(sample, callset_id, callset_ref, "idx")] = tbi_path
 
-CONSTRAINT_SAMPLES = "(" + "|".join(SAMPLES) + ")"
-CONSTRAINT_CALLSETS = "(" + "|".join(CALLSETS) + ")"
-CONSTRAINT_REFS = "(" + "|".join(REFERENCES) + ")"
-CONSTRAINT_REFERENCES = CONSTRAINT_REFS
+        wildcard_combination = {
+            "sample": sample,
+            "callset": callset_id,
+            "ref": callset_ref
+        }
+        SAMPLE_CALLSET_WILDCARDS.append(wildcard_combination)
+
+    return None
+
+
+def build_constraint(wildcard_values):
+    return "(" + "|".join(sorted(wildcard_values)) + ")"
+
 
 def get_sample_callset_wildcards(samples, callsets, references):
     return SAMPLE_CALLSET_WILDCARDS
+
+
+_ = parse_sample_sheet()
+
+
+REFERENCE_MISMATCH = 0
+for sc_key in SAMPLE_CALLSET_MAP.keys():
+    # NB: key can have length 4 for vcf/idx info
+    sample, callset_id, ref_id = sc_key[:3]
+    if ref_id in REFERENCES:
+        continue
+    logerr(f"Annotated reference is not configured: {sample} / {callset_id} / {ref_id}")
+    REFERENCE_MISMATCH += 1
+
+if REFERENCE_MISMATCH > 0:
+    logerr("Reference/callset mismatch - aborting.")
+    logerr(f"{REFERENCE_GENOMES}")
+    raise RuntimeError(
+        f"Encountered {REFERENCE_MISMATCH} reference/callset mismatch error(s). "
+        "See above for details."
+    )
+
+
+SAMPLES = sorted(SAMPLES)
+CALLSETS = sorted(CALLSETS)
+
+CONSTRAINT_SAMPLES = build_constraint(SAMPLES)
+CONSTRAINT_CALLSETS = build_constraint(CALLSETS)

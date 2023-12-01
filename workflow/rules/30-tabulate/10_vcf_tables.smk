@@ -19,7 +19,7 @@ rule split_vcf_tables:
     shell:
         "zgrep -v chrom {input.table}"  # get rid of header
             " | "
-        "{{ egrep \"{wildcards.chrom}\\b\" || true; }}"  # do not fail if no calls on chrom
+        "{{ egrep \"^{wildcards.chrom}\\b\" || true; }}"  # do not fail if no calls on chrom
             " | "
         "{{ egrep \"\\s{wildcards.variant_group}\\s\" || true; }}"  # do not fail if no calls of type
             " | "
@@ -30,14 +30,7 @@ rule split_vcf_tables:
 
 rule concat_all_vcf_subsets:
     input:
-        subsets = expand(
-            rules.split_vcf_tables.output.subset,
-            get_sample_callset_wildcards,
-            sample=SAMPLES,
-            callset=CALLSETS,
-            ref=REFERENCES,
-            allow_missing=True
-        )
+        subsets = get_callsets_by_ref
     output:
         concat = DIR_PROC.joinpath(
             "30-tabulate", "10_vcf_tables", "10_concat_by_ref",

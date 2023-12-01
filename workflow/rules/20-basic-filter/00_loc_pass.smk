@@ -51,7 +51,7 @@ rule exclude_no_pass_outside_regions:
             "10-norm/{sample}.{callset}.{ref}.norm-idx.vcf.gz.tbi"
         ),
         keep_chroms = DIR_PROC.joinpath(
-            "00-prepare/ref_chroms/{sample}.{callset}.{ref}.keep-chroms.txt"
+            "00-prepare/ref_chroms/{ref}.keep-chroms.txt"
         ),
     output:
         vcf = DIR_PROC.joinpath(
