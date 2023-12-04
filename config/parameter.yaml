@@ -11,6 +11,10 @@
 # x - e[x]clude records
 vcf_norm_ref_action: s
 
+# distance cutoff for positional merge
+# of SVs (bedtools merge)
+sv_proximal_dist_cutoff: 200
+
 # Config options to use reference container
 # as part of the pipeline
 use_reference_container: false
