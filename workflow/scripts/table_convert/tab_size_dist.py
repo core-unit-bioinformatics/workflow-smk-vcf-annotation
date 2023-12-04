@@ -82,6 +82,9 @@ def parse_command_line():
 
 
 class Variant:
+    """Slot info read in script
+    sv_merging.py - do not change!
+    """
 
     __slots__ = (
         "chrom",
