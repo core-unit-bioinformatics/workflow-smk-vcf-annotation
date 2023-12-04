@@ -24,7 +24,7 @@ rule tabulate_variant_size_distribution:
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
     resources:
-        mem_mb=lambda wildcards, attempt: 2048 * attempt,
+        mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt,
     params:
         script=find_script("tab_size_dist")
     shell:
