@@ -11,6 +11,8 @@ rule create_grouped_long_call_table:
             "call_tables", "merged_groups", "{ref}",
             "{ref}.{variant_group}.by-group.tsv.gz"
         ),
+    conda:
+        DIR_ENVS.joinpath("vcftools.yaml")
     resources:
         mem_mb=lambda wildcards, attempt: 1024 * attempt
     params:
