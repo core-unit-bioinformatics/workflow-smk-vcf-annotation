@@ -21,3 +21,4 @@ include: "30-tabulate/10_vcf_tables.smk"
 
 include: "40-merge/10_by_refpos.smk"
 include: "40-merge/30_flatten_tables.smk"
+include: "40-merge/50_group_calls.smk"
