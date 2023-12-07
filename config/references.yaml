@@ -31,3 +31,9 @@ reference_chromosomes:
   - chr22
 #  - chrX
 #  - chrY
+
+
+annotations:
+  hg38:
+    genes: gencode.v44.basic.annotation.bed
+    hgsvc2: variants_freeze4_sv_insdel.bed
