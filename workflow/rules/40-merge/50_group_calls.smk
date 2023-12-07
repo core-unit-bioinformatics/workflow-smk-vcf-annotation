@@ -38,7 +38,7 @@ rule count_sample_callset_subsets:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     params:
-        script=find_script("merge_by_group")
+        script=find_script("count_sample_sets")
     shell:
         "{params.script} --grouped-calls {input.tsv} "
             "--out-subset-call-map {output.subset_map} "
