@@ -28,6 +28,8 @@ rule find_closest_annotated_region:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
         "bedtools closest -d -a {input.calls} -b {input.ann}"
+            " | "
+        "gzip > {output.tsv}"
 
 
 rule run_all_find_closest_annotated_region:
