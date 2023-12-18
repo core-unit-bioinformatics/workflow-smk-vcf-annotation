@@ -116,10 +116,10 @@ def determine_file_type(file_path):
     return open_func, read_mode, write_mode
 
 
-def has_compatible_size(group_variant, test_variant):
+def has_compatible_size(group_variant, test_variant, lenient_end_check):
 
     ref_length = group_variant.end - group_variant.start
-    if ref_length < 2 and group_variant.size > 1:
+    if (ref_length < 2 and group_variant.size > 1) or lenient_end_check:
         # no "length" in reference space, e.g., INS call
         # just compare sizes
         size_frac = test_variant.size / group_variant.size
@@ -147,11 +147,53 @@ def check_grouping_criteria(sv_group, sv_to_check):
         sv.end - 100 <= sv_to_check.end <= sv.end + 100
         for sv in sv_group
     )
+
+    # Annoying special case: a caller like pbsv produces DUPs
+    # with two breakpoints in reference space whereas other callers
+    # may just call an INS with a single breakpoint, which means
+    # the end breakpoint will not generally fall within the distance
+    # even if the two calls are likely the same event.
+    # If and only if the SV types belong to these two types,
+    # the "close_end" criterion can be ignored/relaxed.
+    # TODO: turn this into a config parameter?
+    lenient_end_check = False
     if not (close_start and close_end):
-        return False
+        # the actual variant type of a group can be mixed for the INS/DUP
+        # case, hence the line below selects for the majority type
+        actual_group_types = set(sv.vartype for sv in sv_group)
+        group_is_homogen = len(actual_group_types) == 1
+        group_type = None
+        if group_is_homogen:
+            group_type = actual_group_types.pop()
+        actual_check_type = sv_to_check.vartype
+
+        # Important for debugging: after merging the first DUP call into a group of INS,
+        # the all() checks for the coordinates above will most likely fail. Need to consider
+        # a few scenarios in the following:
+
+        # if the group is homogeneous and the SV type to check is different, only
+        # INS/DUP combinations can be checked leniently
+        if group_is_homogen and actual_check_type != group_type:
+            lenient_end_check = group_type == "DUP" and actual_check_type == "INS"
+            lenient_end_check |= group_type == "INS" and actual_check_type == "DUP"
+        elif group_is_homogen:
+            # implies actual_check_type is identical to group type, hence the
+            # end coordinates should match; maybe, e.g., different ALT here
+            lenient_end_check = False
+        else:
+            # group is not homogeneous, e.g., DUP already merged into INS
+            # if so, lenient check if everything is DUP/INS
+            lenient_end_check = actual_check_type in ["DUP", "INS"]
+            lenient_end_check &= all(grp in ["DUP", "INS"] for grp in actual_group_types)
+
+        if close_start and lenient_end_check:
+            # could merge, RO-test may or may not fail
+            pass
+        else:
+            return False
 
     recip_overlap = all(
-        has_compatible_size(sv, sv_to_check) for sv in sv_group
+        has_compatible_size(sv, sv_to_check, lenient_end_check) for sv in sv_group
     )
     if not recip_overlap:
         return False
@@ -178,11 +220,16 @@ def check_sv_grouping(sv_infos):
         if not groups:
             groups.append([row])
             continue
+        is_first_member = True
         for num, sv_group in enumerate(groups, start=0):
             is_compatible = check_grouping_criteria(sv_group, row)
             if is_compatible:
+                is_first_member = False
                 groups[num].append(row)
                 break
+
+        if is_first_member:
+            groups.append([row])
 
     call_to_group = dict()
     group_to_size = dict()
@@ -317,7 +364,7 @@ def main():
                 # (= same hash), which necessitates making
                 # the list of names unique to avoid selecting
                 # calls several times
-                concat_ids = list(set(concat_ids))
+                concat_ids = sorted(set(concat_ids))
                 group_sv_infos = sv_infos.loc[concat_ids, :]
                 grouped_calls, sizes = check_sv_grouping(group_sv_infos)
                 groups.update(grouped_calls)
