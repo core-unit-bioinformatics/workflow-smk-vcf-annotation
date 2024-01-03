@@ -37,3 +37,8 @@ annotations:
   hg38:
     genes: gencode.v44.basic.annotation.bed
     hgsvc2: variants_freeze4_sv_insdel.bed
+    bands: hg38_gstain_banding.bed
+  t2tv2:
+    bands: t2tv2_gstain_banding.bed
+    newseq: t2tv2_hg38_blind_spots.bed
+

@@ -37,6 +37,12 @@ rule run_all_find_closest_annotated_region:
         tables = expand(
             rules.find_closest_annotated_region.output.tsv,
             ref=["hg38"],
-            annotation=["genes", "hgsvc2"],
+            annotation=["genes", "hgsvc2", "bands"],
+            variant_group=["SV"]
+        ),
+        tables2 = expand(
+            rules.find_closest_annotated_region.output.tsv,
+            ref=["t2tv2"],
+            annotation=["bands", "newseq"],
             variant_group=["SV"]
         )
