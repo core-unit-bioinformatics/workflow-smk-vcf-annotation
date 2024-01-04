@@ -6,9 +6,13 @@ import contextlib as ctl
 import gzip
 import hashlib as hl
 import pathlib as pl
+import sys
 
 import numpy as np
 import pandas as pd
+
+
+DEBUG_MODE = False
 
 
 def parse_command_line():
@@ -31,6 +35,14 @@ def parse_command_line():
         dest="sv_merge",
         help="Path to TSV with positionally (bedtools) merged SVs.",
         required=True
+    )
+
+    parser.add_argument(
+        "--debug-ids",
+        type=lambda x: pl.Path(x).resolve(strict=True),
+        dest="debug_ids",
+        help="Path to text file listing variant IDs for a debug run. Default: None",
+        default=None
     )
 
     parser.add_argument(
@@ -116,17 +128,37 @@ def determine_file_type(file_path):
     return open_func, read_mode, write_mode
 
 
-def has_compatible_size(group_variant, test_variant, lenient_end_check):
+def has_compatible_spread(group_variant, test_variant, lenient_end_check):
+
+    global DEBUG_MODE
 
     ref_length = group_variant.end - group_variant.start
     if (ref_length < 2 and group_variant.size > 1) or lenient_end_check:
         # no "length" in reference space, e.g., INS call
         # just compare sizes
         size_frac = test_variant.size / group_variant.size
+        if DEBUG_MODE:
+            sys.stderr.write(f"\nHCS - case 1 / size_frac: {size_frac}\n")
         is_compatible = 0.75 < size_frac < 1.25
+    elif (ref_length < 2 and group_variant.size < 2):
+        assert group_variant.sv_merge_type in ["BND"]
+        if DEBUG_MODE:
+            sys.stderr.write(f"\nHCS - case 2 / BND\n")
+        # BNDs are compatible iff
+        # chrom2 is identical
+        # chrom2_pos is close
+        # join operation is identical
+        # === important to realize that lenient_end_check is only
+        # === triggered for INS/DUP, those do not end up here
+        chrom2_is_identical = group_variant.chrom2 == test_variant.chrom2
+        chrom2_pos_is_close = test_variant.chrom2_pos - 100 <= group_variant.chrom2_pos <= test_variant.chrom2_pos + 100
+        join_op_is_identical = group_variant.bnd_join_vcf == test_variant.bnd_join_vcf
+        is_compatible = chrom2_is_identical & chrom2_pos_is_close & join_op_is_identical
     else:
         # if length in reference space, check reciprocal overlap
         overlap = min(group_variant.end, test_variant.end) - max(group_variant.start, test_variant.start)
+        if DEBUG_MODE:
+            sys.stderr.write(f"\nHCS - case 3 / ref_length {ref_length} || overlap {overlap}\n")
         ovl_group = overlap / group_variant.size
         ovl_test = overlap / test_variant.size
         is_compatible = ovl_group > 0.5 and ovl_test > 0.5
@@ -135,9 +167,16 @@ def has_compatible_size(group_variant, test_variant, lenient_end_check):
 
 def check_grouping_criteria(sv_group, sv_to_check):
 
+    global DEBUG_MODE
+    DEBUG_RETURN = True  # records what should have been returned
+
     same_type = sv_to_check.sv_merge_type == sv_group[0].sv_merge_type
-    if not same_type:
+    if DEBUG_MODE:
+        DEBUG_RETURN &= same_type
+    elif not same_type:
         return False
+    else:
+        pass
 
     close_start = all(
         sv.start - 100 <= sv_to_check.start <= sv.start + 100
@@ -189,14 +228,38 @@ def check_grouping_criteria(sv_group, sv_to_check):
         if close_start and lenient_end_check:
             # could merge, RO-test may or may not fail
             pass
+        elif DEBUG_MODE:
+            DEBUG_RETURN &= (close_start and lenient_end_check)
         else:
             return False
 
     recip_overlap = all(
-        has_compatible_size(sv, sv_to_check, lenient_end_check) for sv in sv_group
+        has_compatible_spread(sv, sv_to_check, lenient_end_check) for sv in sv_group
     )
-    if not recip_overlap:
+    if DEBUG_MODE:
+        DEBUG_RETURN &= recip_overlap
+    elif not recip_overlap:
         return False
+    else:
+        pass
+
+    if DEBUG_MODE:
+        DEBUG_CHECKS = [
+            ("same_type", same_type),
+            ("lenient_end_check", lenient_end_check),
+            ("recip_overlap", recip_overlap),
+            ("close_start", close_start),
+            ("close_end", close_end)
+        ]
+        try:
+            _ = group_is_homogen
+        except UnboundLocalError:
+            group_is_homogen = "untested"
+        DEBUG_CHECKS.append(("group_is_homogen", group_is_homogen))
+        sys.stderr.write("\nDEBUG print ---\n")
+        sys.stderr.write(" || ".join([f"{name}: {value}" for name, value in DEBUG_CHECKS]) + "\n")
+        sys.stderr.write(" --- end\n")
+        return DEBUG_RETURN
 
     return True
 
@@ -213,7 +276,7 @@ def check_sv_grouping(sv_infos):
     Args:
         sv_infos (_type_): _description_
     """
-
+    global DEBUG_MODE
     groups = []
 
     for row in sv_infos.itertuples():
@@ -244,6 +307,11 @@ def check_sv_grouping(sv_infos):
             dict((call_id, group_id) for call_id in call_ids)
         )
         group_to_size[group_id] = group_size
+
+    if DEBUG_MODE:
+        sys.stderr.write("\nDEBUG print ---\n")
+        sys.stderr.write(" || ".join([f"GRP id {group} -- size {size}" for group, size in group_to_size.items()]) + "\n")
+        sys.stderr.write(" --- end\n")
 
     return call_to_group, group_to_size
 
@@ -327,6 +395,8 @@ def extract_sv_statistics(sv_infos):
 
 def main():
 
+    global DEBUG_MODE
+
     args = parse_command_line()
     sv_table_header = get_sv_table_header()
 
@@ -350,13 +420,28 @@ def main():
 
     open_merge, read_merge, _ = determine_file_type(args.sv_merge)
 
+    if args.debug_ids is not None:
+
+        DEBUG_MODE = True
+        with open(args.debug_ids, "r") as listing:
+            DEBUG_IDS = listing.read().strip().split()
+        DEBUG_PROCESSED = False
+
     groups = dict()
     group_sizes = col.Counter()
 
     with open_merge(args.sv_merge, read_merge) as merge_table:
         for line in merge_table:
+            if DEBUG_MODE and DEBUG_PROCESSED:
+                break
             chrom, start, end, concat_ids = line.strip().split()
             concat_ids = concat_ids.split("|")
+            if DEBUG_MODE:
+                if any(debug_id in concat_ids for debug_id in DEBUG_IDS):
+                    concat_ids = DEBUG_IDS
+                    DEBUG_PROCESSED = True
+                else:
+                    continue
             if len(concat_ids) == 1:
                 continue
             else:
