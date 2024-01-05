@@ -33,11 +33,13 @@ rule find_closest_annotated_region:
 
 
 rule run_all_find_closest_annotated_region:
+    # TODO
+    # this must be turned into a configurable pull
     input:
         tables = expand(
             rules.find_closest_annotated_region.output.tsv,
             ref=["hg38"],
-            annotation=["genes", "hgsvc2", "bands"],
+            annotation=["genes", "hgsvc2", "bands", "ogm"],
             variant_group=["SV"]
         ),
         tables2 = expand(
