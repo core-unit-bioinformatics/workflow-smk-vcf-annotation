@@ -24,5 +24,6 @@ include: "40-merge/30_flatten_tables.smk"
 include: "40-merge/50_group_calls.smk"
 
 include: "50-augment/00_thresholds_long.smk"
+include: "50-augment/20_save_singletons.smk"
 
 include: "60-intersect/10_closest_regions.smk"

@@ -1,0 +1,8 @@
+name: pyutils
+dependencies:
+  - python=3.10.*
+  - numpy=1.25.*
+  - xopen=1.7.*
+  - pandas=2.1.*
+  - pytables=3.8.*
+  - h5py=3.10.*
