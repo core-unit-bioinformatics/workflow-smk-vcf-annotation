@@ -21,11 +21,11 @@ rule select_singletons_in_bracket_long:
     output:
         sng_select_tsv = DIR_RES.joinpath(
             "call_tables", "singletons", "{ref}",
-            "{ref}.{chrom}.{variant_group}.singletons-{bracket}.tsv.gz"
+            "{ref}.{chrom}.{variant_group}.singletons.{bracket}.tsv.gz"
         ),
         sng_select_bed = DIR_RES.joinpath(
             "call_tables", "singletons", "{ref}",
-            "{ref}.{chrom}.{variant_group}.singletons-{bracket}.bed.gz"
+            "{ref}.{chrom}.{variant_group}.singletons.{bracket}.bed.gz"
         )
     wildcard_constraints:
         variant_group="SV"
