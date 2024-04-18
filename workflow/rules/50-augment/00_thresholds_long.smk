@@ -44,7 +44,7 @@ rule determine_plausibility_thresholds_long:
         select_occurrence = df["occurrence"] == "multiple"
         select_lower = df["statistic"] == bracket_low
         select_upper = df["statistic"] == bracket_high
-        selector = select_occurrence & select_lower & select_upper
+        selector = select_occurrence & (select_lower | select_upper)
         sub = df.loc[selector, :].copy()
         if sub.empty:
             err_msg = (
