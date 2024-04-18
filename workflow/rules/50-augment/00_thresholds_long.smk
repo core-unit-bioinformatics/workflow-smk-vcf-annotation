@@ -46,6 +46,16 @@ rule determine_plausibility_thresholds_long:
         select_upper = df["statistic"] == bracket_high
         selector = select_occurrence & select_lower & select_upper
         sub = df.loc[selector, :].copy()
+        if sub.empty:
+            err_msg = (
+                f"{_this_fun}\n"
+                "Subset operation resulted in empty dataframe. "
+                f"Cannot select statistics bracket from file: {input.desc_stats}\n"
+                f"Low percentile value: {params.t_low} - exists? {check_low_exists}\n"
+                f"High percentile value: {params.t_high} - exists? {check_high_exists}\n"
+            )
+            logerr(err_msg)
+            raise ValueError(err_msg)
         sub.to_csv(output.single_select_bracket, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
