@@ -16,6 +16,8 @@ rule split_vcf_tables_by_chrom_group:
             "{sample}.{callset}.{ref}",
             "{sample}.{callset}.{ref}.basic-pass.{chrom}.{variant_group}.split.rsrc"
         )
+    resources:
+        mem_mb=lambda wildcards, attempt: 1024 * attempt
     shell:
         "zcat {input.table} | head -1 | gzip > {output.subset}"
             " && "
@@ -27,7 +29,7 @@ rule split_vcf_tables_by_chrom_group:
             " | "
         "sort -V -k1 -k2n,3n"
             " | "
-        "gzip -c >> {output.subset}"
+        "gzip >> {output.subset}"
 
 
 rule concat_vcf_subsets_by_ref_chrom:
