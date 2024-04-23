@@ -80,7 +80,7 @@ rule get_grouped_multi_call_listing:
 rule run_all_build_contrast_id_lists:
     input:
         listings = expand(
-            rule.get_grouped_multi_call_listing.output,
+            rules.get_grouped_multi_call_listing.output,
             ref=REFERENCE_GENOMES,
             variant_group=["SV"],
             contrast=list(CONTRAST.keys())
