@@ -32,7 +32,7 @@ rule flatten_merge_tables_short:
 
 rule flatten_merge_tables_long:
     input:
-        infos = rules.concat_all_vcf_subsets.output.concat,
+        infos = rules.concat_vcf_subsets_by_ref_chrom.output.concat,
         mrg = rules.merge_proximal_long_by_refpos.output.merged,
     output:
         singletons = DIR_PROC.joinpath(

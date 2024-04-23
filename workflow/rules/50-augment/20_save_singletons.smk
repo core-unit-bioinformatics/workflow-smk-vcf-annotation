@@ -10,12 +10,12 @@ rule select_singletons_in_bracket_long:
     """
     input:
         read_header = expand(
-            rules.tabulate_variant_size_distribution.output.table,
+            rules.convert_vcf_to_table.output.table,
             sample=SAMPLE_CALLSET_WILDCARDS[0]["sample"],
             callset=SAMPLE_CALLSET_WILDCARDS[0]["callset"],
             ref=SAMPLE_CALLSET_WILDCARDS[0]["ref"]
         ),
-        call_table = rules.concat_all_vcf_subsets.output.concat,
+        call_table = rules.concat_vcf_subsets_by_ref_chrom.output.concat,
         singletons = rules.flatten_merge_tables_long.output.singletons,
         stats_bracket = rules.determine_plausibility_thresholds_long.output.single_select_bracket
     output:

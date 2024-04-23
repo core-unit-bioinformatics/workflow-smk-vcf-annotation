@@ -1,5 +1,5 @@
 
-rule tabulate_variant_size_distribution:
+rule convert_vcf_to_table:
     input:
         vcf = rules.keep_variant_genotypes.output.vcf,
         tbi = rules.keep_variant_genotypes.output.tbi,
@@ -26,7 +26,7 @@ rule tabulate_variant_size_distribution:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt,
     params:
-        script=find_script("tab_size_dist")
+        script=find_script("convert_vcf_table")
     shell:
         "{params.script} --vcf {input.vcf} --out-table {output.table} "
             "--out-size-dist {output.stats} --sample {wildcards.sample} "

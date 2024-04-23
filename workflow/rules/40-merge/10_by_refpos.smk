@@ -9,7 +9,7 @@ rule merge_identical_short_by_refpos:
     singletons.
     """
     input:
-        concat = rules.concat_all_vcf_subsets.output.concat
+        concat = rules.concat_vcf_subsets_by_ref_chrom.output.concat
     output:
         merged = DIR_PROC.joinpath(
             "40-merge", "10_by_refpos", "{ref}",
@@ -43,7 +43,7 @@ rule merge_proximal_long_by_refpos:
     should be merged.
     """
     input:
-        concat = rules.concat_all_vcf_subsets.output.concat
+        concat = rules.concat_vcf_subsets_by_ref_chrom.output.concat
     output:
         merged = DIR_PROC.joinpath(
             "40-merge", "10_by_refpos", "{ref}",

@@ -19,7 +19,7 @@ rule find_closest_annotated_region:
         )
     output:
         tsv = DIR_PROC.joinpath(
-            "60-intersect", "closest_regions",
+            "70-intersect", "closest_regions",
             "{ref}.{variant_group}.grouped-calls.{annotation}.tsv.gz"
         )
     conda:

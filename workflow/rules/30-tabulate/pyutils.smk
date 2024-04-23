@@ -7,7 +7,7 @@ class SafeFormattingDict(dict):
 
 def get_callsets_by_ref(wildcards):
 
-    input_template = rules.split_vcf_tables.output.subset
+    input_template = rules.split_vcf_tables_by_chrom_group.output.subset
     select_ref = wildcards.ref
 
     callset_for_ref = []
