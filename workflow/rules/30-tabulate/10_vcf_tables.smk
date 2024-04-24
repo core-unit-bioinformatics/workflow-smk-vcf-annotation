@@ -19,7 +19,7 @@ rule split_vcf_tables_by_chrom_group:
     resources:
         mem_mb=lambda wildcards, attempt: 1024 * attempt
     shell:
-        "zcat {input.table} | head -1 | gzip > {output.subset}"
+        "zgrep -e \"^chrom\\s\" {input.table} | gzip > {output.subset}"
             " && "
         "zgrep -v chrom {input.table}"  # skip over header
             " | "
@@ -48,7 +48,7 @@ rule concat_vcf_subsets_by_ref_chrom:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
-        "zcat {input.subsets[0]} | head -1 | gzip > {output.concat}"
+        "zgrep -e \"^chrom\\s\" {input.subsets[0]} | gzip > {output.concat}"
             " && "
         "zgrep -v chrom {input.subsets} | sort -V -k1 -k2n,3n | gzip >> {output.concat}"
 
