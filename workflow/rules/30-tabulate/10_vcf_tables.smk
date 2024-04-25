@@ -50,7 +50,42 @@ rule concat_vcf_subsets_by_ref_chrom:
     shell:
         "zgrep -e \"^chrom\\s\" {input.subsets[0]} | gzip > {output.concat}"
             " && "
-        "zgrep -v chrom {input.subsets} | sort -V -k1 -k2n,3n | gzip >> {output.concat}"
+        "zcat {input.subsets}"
+            " | "
+        "egrep -v \"^chrom\""  # skip over header lines
+            " | "
+        "sort -V -k1 -k2n,3n | gzip >> {output.concat}"
+
+
+rule concat_chrom_callsets_by_ref:
+    """This rule is just a convenience exit point
+    of the workflow that essentially "copies" all
+    concatenated sample-/callset-level calls into
+    the result folder for (potential) later inspection.
+    """
+    input:
+        tables = expand(
+            rules.concat_vcf_subsets_by_ref_chrom.output.concat,
+            chrom=config["reference_chromosomes"],
+            allow_missing=True
+        )
+    output:
+        table = DIR_RES.joinpath(
+            "callsets", "concat_by_ref", "tables",
+            "{ref}", "{ref}.{variant_group}.concat-calls.tsv.gz"
+        )
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    run:
+        import pandas as pd
+        concat = []
+        for tsv_file in input.tables:
+            df = pd.read_csv(tsv_file, sep="\t", header=0)
+            concat.append(df)
+        concat = pd.concat(concat, axis=0, ignore_index=False)
+        concat.sort_values(["chrom", "start", "end", "sample"], inplace=True)
+        concat.to_csv(output.table, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
 
 
 rule run_all_concat_vcf_subsets_by_ref:
@@ -61,6 +96,11 @@ rule run_all_concat_vcf_subsets_by_ref:
             rules.concat_vcf_subsets_by_ref_chrom.output.concat,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
+            variant_group=["SNV", "INDEL", "SV"]
+        ),
+        res_table = expand(
+            rules.concat_chrom_callsets_by_ref.output.table,
+            ref=REFERENCES,
             variant_group=["SNV", "INDEL", "SV"]
         )
 
