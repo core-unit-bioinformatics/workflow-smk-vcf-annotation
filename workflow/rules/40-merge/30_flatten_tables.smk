@@ -12,7 +12,7 @@ rule flatten_merge_tables_short:
             "{ref}.{chrom}.{variant_group}.multicalls.flat.tsv.gz"
         ),
         count_stats = DIR_RES.joinpath(
-            "statistics", "counts", "{ref}",
+            "statistics", "counts", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.flat-tables.count-stats.tsv"
         ),
     wildcard_constraints:
@@ -44,11 +44,11 @@ rule flatten_merge_tables_long:
             "{ref}.{chrom}.{variant_group}.multicalls.flat.tsv.gz"
         ),
         count_stats = DIR_RES.joinpath(
-            "statistics", "counts", "{ref}",
+            "statistics", "counts", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.flat-tables.count-stats.tsv"
         ),
         desc_stats = DIR_PROC.joinpath(
-            "statistics", "descriptive", "{ref}",
+            "statistics", "descriptive", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.flat-tables.desc-stats.tsv"
         ),
     wildcard_constraints:
