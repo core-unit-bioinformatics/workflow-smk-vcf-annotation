@@ -81,13 +81,13 @@ rule concat_chrom_callsets_by_ref:
             "INDEL": 4096
         }[wildcards.variant_group] * attempt
     shell:
-        "zgrep -e \"^chrom\\s\" {input.tables[0]} | gzip > {output.concat}"
+        "zgrep -e \"^chrom\\s\" {input.tables[0]} | gzip > {output.table}"
             " && "
         "zcat {input.tables}"
             " | "
         "egrep -v \"^chrom\""  # skip over header lines
             " | "
-        "sort -V -k1 -k2n,3n | gzip >> {output.concat}"
+        "sort -V -k1 -k2n,3n | gzip >> {output.table}"
 
 
 rule run_all_concat_vcf_subsets_by_ref:
