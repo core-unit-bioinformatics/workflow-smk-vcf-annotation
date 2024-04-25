@@ -11,6 +11,8 @@ import gzip
 import operator as op
 import pathlib as pl
 
+import xopen
+
 
 def parse_command_line():
 
@@ -44,11 +46,11 @@ def parse_command_line():
     )
 
     parser.add_argument(
-        "--multiples",
+        "--multicalls",
         "-m",
         type=lambda x: pl.Path(x).resolve(strict=False),
-        dest="multiples",
-        help="Path to output file for multiples / confirmed calls."
+        dest="multicalls",
+        help="Path to output file for multicalls / confirmed calls."
     )
 
     parser.add_argument(
@@ -72,7 +74,7 @@ def get_table_header(variant_group):
 
     # columns 6,7,8,16,20
     commons = [
-        "call_id", "sample", "callset_id", "ref_allele", "alt_allele"
+        "name", "sample", "callset_id", "ref_allele", "alt_allele"
     ]
 
     known_headers = {
@@ -90,45 +92,56 @@ def output_header(output_type):
     ]
 
     commons = [
-        "call_id", "var_type", "var_length",
+        "name", "var_type", "var_length",
         "sample", "callset_id"
     ]
 
-    only_multiples = ["group_id", "group_size"]
+    only_multicalls = ["group_id", "group_size"]
 
     allele_rep = ["ref_code", "alt_code"]
 
     if output_type == "singletons":
         header = positional + commons + allele_rep
-    elif output_type == "multiples":
-        header = positional + commons + only_multiples + allele_rep
+    elif output_type == "multicalls":
+        header = positional + commons + only_multicalls + allele_rep
     else:
         raise ValueError(f"Unknown output type: {output_type}")
     return header
 
 
-def determine_file_type(file_path):
+def check_or_get_column_header(table_file, variant_group):
 
-    open_func = open
-    write_mode = "w"
-    read_mode = "r"
-    if file_path.suffix == ".gz":
-        open_func = gzip.open
-        write_mode = "wt"
-        read_mode = "rt"
-    return open_func, read_mode, write_mode
+    first_line = table_file.readline()
+    if first_line.startswith("#"):
+        check_header = first_line.strip("#").strip().split()
+        header = []
+        for item in check_header:
+            if item == "call_id":
+                header.append("name")
+            else:
+                header.append(item)
+    else:
+        table_file.seek(0)
+        header = get_table_header(variant_group)
+    return header
 
 
-def field_getter(variant_group):
+def field_getter(variant_group, column_names):
 
     if variant_group == "SNV":
-        get_fields = op.itemgetter(*tuple(["call_id", "sample", "callset_id", "ref_allele", "alt_allele"]))
+        select_fields = ["name", "sample", "callset_id", "ref_allele", "alt_allele"]
     elif variant_group == "INDEL":
-        get_fields = op.itemgetter(
-            *tuple(["call_id", "sample", "callset_id", "var_type", "var_length", "ref_allele", "alt_allele"])
-        )
+        select_fields = ["name", "sample", "callset_id", "var_type", "var_length", "ref_allele", "alt_allele"]
     else:
         raise NotImplementedError(f"no field getter for: {variant_group}")
+
+    if not all(field in column_names for field in column_names):
+        raise ValueError("Not all selected fields in table columns.")
+
+    get_fields = op.itemgetter(
+        *tuple(select_fields)
+    )
+
     return get_fields
 
 
@@ -289,31 +302,28 @@ def main():
 
     args = parse_command_line()
 
-    open_input, read_input, _ = determine_file_type(args.merged_table)
-    open_singles, _, write_singles = determine_file_type(args.singletons)
-    open_multis, _, write_multis = determine_file_type(args.multiples)
-
     # create folders for output
     args.singletons.parent.mkdir(exist_ok=True, parents=True)
-    args.multiples.parent.mkdir(exist_ok=True, parents=True)
+    args.multicalls.parent.mkdir(exist_ok=True, parents=True)
 
-    column_names = get_table_header(args.variant_group)
-    get_columns = field_getter(args.variant_group)
     stat_counter = col.Counter()
-
-    row_processor = get_row_processor(args.variant_group)
-    row_processor = fnt.partial(row_processor, *(stat_counter, get_columns))
 
     buffer_singles = io.StringIO()
     buffer_multis = io.StringIO()
     buffer_size = 0
     with ctl.ExitStack() as exs:
-        merged_table = exs.enter_context(open_input(args.merged_table, read_input))
-        singletons = exs.enter_context(open_singles(args.singletons, write_singles))
+        merged_table = exs.enter_context(xopen.xopen(args.merged_table, "r"))
+
+        column_names = get_table_header(merged_table, args.variant_group)
+        get_columns = field_getter(args.variant_group, column_names)
+        row_processor = get_row_processor(args.variant_group)
+        row_processor = fnt.partial(row_processor, *(stat_counter, get_columns))
+
+        singletons = exs.enter_context(xopen.xopen(args.singletons, "w"))
         singletons.write("\t".join(output_header("singletons")) + "\n")
 
-        multiples = exs.enter_context(open_multis(args.multiples, write_multis))
-        multiples.write("\t".join(output_header("multiples")) + "\n")
+        multicalls = exs.enter_context(xopen.xopen(args.multicalls, "w"))
+        multicalls.write("\t".join(output_header("multicalls")) + "\n")
 
         reader = csv.DictReader(merged_table, fieldnames=column_names, delimiter="\t")
         for row in reader:
@@ -325,12 +335,12 @@ def main():
             if buffer_size > int(5e8):
                 singletons.write(buffer_singles.getvalue())
                 buffer_singles = io.StringIO()
-                multiples.write(buffer_multis.getvalue())
+                multicalls.write(buffer_multis.getvalue())
                 buffer_multis = io.StringIO()
 
         if buffer_size > 0:
             singletons.write(buffer_singles.getvalue())
-            multiples.write(buffer_multis.getvalue())
+            multicalls.write(buffer_multis.getvalue())
 
     args.count_stats.parent.mkdir(exist_ok=True, parents=True)
     with open(args.count_stats, "w") as dump:

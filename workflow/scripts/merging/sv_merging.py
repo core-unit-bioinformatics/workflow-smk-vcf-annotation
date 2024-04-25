@@ -10,6 +10,7 @@ import sys
 
 import numpy as np
 import pandas as pd
+import xopen
 
 
 DEBUG_MODE = False
@@ -55,10 +56,10 @@ def parse_command_line():
     )
 
     parser.add_argument(
-        "--multiples",
+        "--multicalls",
         "-m", "-mul",
         type=lambda x: pl.Path(x).resolve(strict=False),
-        dest="multiples",
+        dest="multicalls",
         help="Path to output file for shared SVs.",
         required=True
     )
@@ -83,49 +84,6 @@ def parse_command_line():
 
     args = parser.parse_args()
     return args
-
-
-def get_sv_table_header():
-    """Ugly hack ... read the header information
-    from the "Variant" class definition in the
-    tab_size_convert.py script - horrible ...
-    """
-    my_loc = pl.Path(__file__).resolve(strict=True)
-    script_loc = my_loc.parent.parent.joinpath("table_convert", "tab_size_dist.py")
-    assert script_loc.is_file(), f"Cannot extract table header from script: {script_loc}"
-
-    table_header = []
-    in_class_def = False
-    fetch_info = False
-    with open(script_loc, "r") as script_file:
-        for line in script_file:
-            if line.startswith("class Variant:"):
-                in_class_def = True
-                continue
-            if "__slots__ = (" in line.strip() and in_class_def:
-                fetch_info = True
-                continue
-            if ")" in line and in_class_def:
-                break
-            if fetch_info:
-                column_name = line.strip().split()[0]
-                column_name = column_name.strip("\",").strip()
-                assert column_name.isidentifier(), f"Invalid column name: {column_name}"
-                table_header.append(column_name)
-
-    return table_header
-
-
-def determine_file_type(file_path):
-
-    open_func = open
-    write_mode = "w"
-    read_mode = "r"
-    if file_path.suffix == ".gz":
-        open_func = gzip.open
-        write_mode = "wt"
-        read_mode = "rt"
-    return open_func, read_mode, write_mode
 
 
 def has_compatible_spread(group_variant, test_variant, lenient_end_check):
@@ -324,7 +282,7 @@ def dump_counting_statistics(out_file, count_stats):
         for row in count_stats.itertuples():
             sample, callset, vartype = row.Index
             dump.write(f"{sample}\t{callset}\t{vartype}\tsingleton\t{row.singleton}\n")
-            dump.write(f"{sample}\t{callset}\t{vartype}\tmultiple\t{row.multiple}\n")
+            dump.write(f"{sample}\t{callset}\t{vartype}\tmulticall\t{row.multicall}\n")
     return
 
 
@@ -340,7 +298,7 @@ def dump_variant_calls(out_file, subset, sv_infos):
              "ref_allele_repr", "alt_allele_repr"
         ]
         selected_calls = sv_infos.loc[sv_infos["group_id"] == "singleton", :]
-    elif subset == "multiple":
+    elif subset == "multicalls":
         header = common_header + [
             "group_id", "group_size", "ref_allele_repr", "alt_allele_repr"
         ]
@@ -379,7 +337,7 @@ def extract_sv_statistics(sv_infos):
     for (vartype, is_shared), stats in sv_infos.groupby(["vartype", "is_shared"])[select_qual_stats]:
         sub = stats.replace(to_replace=-1, value=np.nan)
         desc_stats = sub.describe(percentiles=[0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95])
-        category = "singleton" if is_shared < 1 else "multiple"
+        category = "singleton" if is_shared < 1 else "multicall"
         new_index = pd.MultiIndex.from_tuples(
             [(vartype, category, norm_stat_name[c]) for c in desc_stats.index.values],
             names=["vartype", "occurrence", "statistic"]
@@ -398,14 +356,12 @@ def main():
     global DEBUG_MODE
 
     args = parse_command_line()
-    sv_table_header = get_sv_table_header()
 
     # this is one table (per chromosome) for all samples/callsets,
     # so this structure can be huge in memory
     sv_infos = pd.read_csv(
         args.sv_table, sep="\t", comment="#",
-        header=None, names=sv_table_header,
-        index_col="name", low_memory=False
+        header=0, index_col="name", low_memory=False
     )
     # empirically, callers may differ in the way they are labeling
     # INS/DUPs, so recode here for easier merge later on
@@ -418,8 +374,6 @@ def main():
 
     sv_infos["sv_merge_type"] = sv_infos["vartype"].replace(sv_merge_types)
 
-    open_merge, read_merge, _ = determine_file_type(args.sv_merge)
-
     if args.debug_ids is not None:
 
         DEBUG_MODE = True
@@ -430,8 +384,10 @@ def main():
     groups = dict()
     group_sizes = col.Counter()
 
-    with open_merge(args.sv_merge, read_merge) as merge_table:
+    with xopen.xopen(args.sv_merge, "r") as merge_table:
         for line in merge_table:
+            if line.startswith("#"):
+                continue
             if DEBUG_MODE and DEBUG_PROCESSED:
                 break
             chrom, start, end, concat_ids = line.strip().split()
@@ -461,7 +417,7 @@ def main():
 
     count_stats = sv_infos.groupby(["sample", "callset", "vartype"])["group_id"].agg(
         singleton=lambda x: (x == "singleton").sum(),
-        multiple=lambda x: (x != "singleton").sum()
+        multicall=lambda x: (x != "singleton").sum()
     )
     dump_counting_statistics(args.count_stats, count_stats)
 
@@ -473,7 +429,7 @@ def main():
     )
 
     dump_variant_calls(args.singletons, "singleton", sv_infos)
-    dump_variant_calls(args.multiples, "multiple", sv_infos)
+    dump_variant_calls(args.multicalls, "multicall", sv_infos)
 
     return 0
 

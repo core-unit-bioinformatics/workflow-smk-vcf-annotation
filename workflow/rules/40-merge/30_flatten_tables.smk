@@ -3,17 +3,17 @@ rule flatten_merge_tables_short:
     input:
         tsv = rules.merge_identical_short_by_refpos.output.merged
     output:
-        singletons = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.singletons.tsv.gz"
+        single_tsv = DIR_RES.joinpath(
+            "callsets", "singletons" "{ref}", "tables",
+            "{ref}.{chrom}.{variant_group}.singletons.flat.tsv.gz"
         ),
-        multiples = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.multiples.tsv.gz"
+        multi_tsv = DIR_RES.joinpath(
+            "callsets", "multicalls", "{ref}", "tables",
+            "{ref}.{chrom}.{variant_group}.multicalls.flat.tsv.gz"
         ),
-        count_stats = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.count-stats.tsv"
+        count_stats = DIR_RES.joinpath(
+            "statistics", "counts", "{ref}",
+            "{ref}.{chrom}.{variant_group}.flat-tables.count-stats.tsv"
         ),
     wildcard_constraints:
         variant_group="(INDEL|SNV)"
@@ -26,7 +26,7 @@ rule flatten_merge_tables_short:
         time_hrs=lambda wildcards, attempt: attempt
     shell:
         "{params.script} --merged-table {input.tsv} --variant-group {wildcards.variant_group} "
-            "--singletons {output.singletons} --multiples {output.multiples} "
+            "--singletons {output.single_tsv} --multicalls {output.multi_tsv} "
             "--count-stats {output.count_stats}"
 
 
@@ -35,21 +35,21 @@ rule flatten_merge_tables_long:
         infos = rules.concat_vcf_subsets_by_ref_chrom.output.concat,
         mrg = rules.merge_proximal_long_by_refpos.output.merged,
     output:
-        singletons = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.singletons.tsv.gz"
+        single_tsv = DIR_RES.joinpath(
+            "callsets", "singletons" "{ref}", "tables",
+            "{ref}.{chrom}.{variant_group}.singletons.flat.tsv.gz"
         ),
-        multiples = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.multiples.tsv.gz"
+        multi_tsv = DIR_RES.joinpath(
+            "callsets", "multicalls", "{ref}", "tables",
+            "{ref}.{chrom}.{variant_group}.multicalls.flat.tsv.gz"
         ),
-        count_stats = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.count-stats.tsv"
+        count_stats = DIR_RES.joinpath(
+            "statistics", "counts", "{ref}",
+            "{ref}.{chrom}.{variant_group}.flat-tables.count-stats.tsv"
         ),
         desc_stats = DIR_PROC.joinpath(
-            "40-merge", "30_flatten_tables", "{ref}",
-            "{ref}.{chrom}.{variant_group}.flat.desc-stats.tsv"
+            "statistics", "descriptive", "{ref}",
+            "{ref}.{chrom}.{variant_group}.flat-tables.desc-stats.tsv"
         ),
     wildcard_constraints:
         variant_group="SV"
@@ -62,21 +62,21 @@ rule flatten_merge_tables_long:
         time_hrs=lambda wildcards, attempt: attempt
     shell:
         "{params.script} --sv-table {input.infos} --sv-merge {input.mrg} "
-            "--singletons {output.singletons} --multiples {output.multiples} "
+            "--singletons {output.single_tsv} --multicalls {output.multi_tsv} "
             "--count-stats {output.count_stats} --desc-stats {output.desc_stats} "
 
 
 rule run_all_flatten_merge_tables_short:
     input:
         singles = expand(
-            rules.flatten_merge_tables_short.output.singletons,
+            rules.flatten_merge_tables_short.output.single_tsv,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
             variant_group=["INDEL", "SNV"]
 
         ),
         multis = expand(
-            rules.flatten_merge_tables_short.output.multiples,
+            rules.flatten_merge_tables_short.output.multi_tsv,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
             variant_group=["INDEL", "SNV"]
@@ -92,13 +92,13 @@ rule run_all_flatten_merge_tables_short:
 rule run_all_flatten_merge_tables_long:
     input:
         singles = expand(
-            rules.flatten_merge_tables_long.output.singletons,
+            rules.flatten_merge_tables_long.output.single_tsv,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
             variant_group=["SV"]
         ),
         multis = expand(
-            rules.flatten_merge_tables_long.output.multiples,
+            rules.flatten_merge_tables_long.output.multi_tsv,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
             variant_group=["SV"]
