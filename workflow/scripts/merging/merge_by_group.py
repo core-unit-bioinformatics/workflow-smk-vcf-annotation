@@ -53,6 +53,7 @@ def make_by_group_table(tab_calls):
         }
     )
     by_group["distinct_samples"] = 0
+    by_group["sample_set"] = "empty-set"
 
     # indicator = indicate which calls/groups
     # appear in which callset
@@ -68,6 +69,7 @@ def make_by_group_table(tab_calls):
         # why it worked for a subset w/o issues. Hence, this slow and
         # manual solution to building the call-to-sample/callset indicator
         by_group.loc[group_id, "distinct_samples"] = sample_calls["sample"].nunique()
+        by_group.loc[group_id, "sample_set"] = ",".join(sorted(set(sample_calls["sample"].values)))
         for row in sample_calls.itertuples():
             indicator.loc[row.group_id, row.sample_callset] = row.name
 
