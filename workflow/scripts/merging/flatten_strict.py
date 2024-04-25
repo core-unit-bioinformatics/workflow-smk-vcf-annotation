@@ -74,12 +74,12 @@ def get_table_header(variant_group):
 
     # columns 6,7,8,16,20
     commons = [
-        "name", "sample", "callset_id", "ref_allele", "alt_allele"
+        "name", "sample", "callset", "ref_allele_repr", "alt_allele_repr"
     ]
 
     known_headers = {
         "SNV": positional + commons,
-        "INDEL": positional + ["var_type", "var_length"] + commons
+        "INDEL": positional + ["vartype", "size"] + commons
     }
 
     return known_headers[variant_group]
@@ -92,8 +92,8 @@ def output_header(output_type):
     ]
 
     commons = [
-        "name", "var_type", "var_length",
-        "sample", "callset_id"
+        "name", "vartype", "size",
+        "sample", "callset"
     ]
 
     only_multicalls = ["group_id", "group_size"]
@@ -129,9 +129,9 @@ def check_or_get_column_header(table_file, variant_group):
 def field_getter(variant_group, column_names):
 
     if variant_group == "SNV":
-        select_fields = ["name", "sample", "callset_id", "ref_allele", "alt_allele"]
+        select_fields = ["name", "sample", "callset", "ref_allele_repr", "alt_allele_repr"]
     elif variant_group == "INDEL":
-        select_fields = ["name", "sample", "callset_id", "var_type", "var_length", "ref_allele", "alt_allele"]
+        select_fields = ["name", "sample", "callset", "vartype", "size", "ref_allele_repr", "alt_allele_repr"]
     else:
         raise NotImplementedError(f"no field getter for: {variant_group}")
 
@@ -344,7 +344,7 @@ def main():
 
     args.count_stats.parent.mkdir(exist_ok=True, parents=True)
     with open(args.count_stats, "w") as dump:
-        _ = dump.write(f"sample\tcallset\tvar_type\tshared\tcount\n")
+        _ = dump.write(f"sample\tcallset\tvartype\tshared\tcount\n")
         for entity, count in stat_counter.most_common():
             row = "\t".join(entity) + f"\t{int(count)}\n"
             _ = dump.write(row)
