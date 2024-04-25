@@ -27,7 +27,7 @@ rule dump_indicator_table_to_bedlike:
     output:
         bed_like = DIR_RES.joinpath(
             "callsets", "merged_groups", "{ref}", "bed",
-            "{ref}.{variant_group}.group-indicator-table.tsv.gz"
+            "{ref}.{variant_group}.group-indicator-table.bed.gz"
         )
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
