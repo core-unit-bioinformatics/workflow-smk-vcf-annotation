@@ -77,26 +77,17 @@ rule concat_chrom_callsets_by_ref:
     resources:
         mem_mb=lambda wildcards, attempt: {
             "SV": 2048,
-            "SNV": 4096,
+            "SNV": 8192,
             "INDEL": 4096
         }[wildcards.variant_group] * attempt
-    run:
-        import pandas as pd
-        import gzip
-
-        with gzip.open(output.table, "wt") as table:
-            write_header = True
-            assert_column_order = None
-            for tsv_file in sorted(input.tables):
-                df = pd.read_csv(tsv_file, sep="\t", header=0)
-                if write_header:
-                    assert_column_order = list(df.columns)
-                # this df contains one chromosome
-                df = df[assert_column_order]
-                df.sort_values(["start", "end", "sample"], inplace=True)
-                concat.to_csv(table, sep="\t", header=write_header, index=False)
-                write_header = False
-    # END OF RUN BLOCK
+    shell:
+        "zgrep -e \"^chrom\\s\" {input.tables[0]} | gzip > {output.concat}"
+            " && "
+        "zcat {input.tables}"
+            " | "
+        "egrep -v \"^chrom\""  # skip over header lines
+            " | "
+        "sort -V -k1 -k2n,3n | gzip >> {output.concat}"
 
 
 rule run_all_concat_vcf_subsets_by_ref:
