@@ -12,7 +12,7 @@ rule prep_merge_table_to_bed:
             )
         )
     resources:
-        mem_mb=lambda wildcards, attempt: 1024 * attempt
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
     run:
         import pandas as pd
 
@@ -39,7 +39,7 @@ rule merge_identical_short_by_refpos:
     singletons.
     """
     input:
-        concat = rules.concat_vcf_subsets_by_ref_chrom.output.concat
+        concat = rules.prep_merge_table_to_bed.output.bed_like
     output:
         merged = DIR_PROC.joinpath(
             "40-merge", "10_by_refpos", "{ref}",
@@ -75,7 +75,7 @@ rule merge_proximal_long_by_refpos:
     and merge into rule above / create single rule
     """
     input:
-        concat = rules.concat_vcf_subsets_by_ref_chrom.output.concat
+        concat = rules.prep_merge_table_to_bed.output.bed_like
     output:
         merged = DIR_PROC.joinpath(
             "40-merge", "10_by_refpos", "{ref}",
