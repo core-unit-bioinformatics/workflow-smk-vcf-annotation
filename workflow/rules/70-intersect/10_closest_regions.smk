@@ -1,7 +1,7 @@
 
 rule find_closest_annotated_region:
     input:
-        calls = rules.dump_indicator_table_to_bedlike.output.bed,
+        calls = rules.dump_indicator_table_to_bedlike.output.bed_like,
         ann = lambda wildcards: DIR_GLOBAL_REF.joinpath(
             config["annotations"][wildcards.ref][wildcards.annotation]
         )
