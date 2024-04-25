@@ -429,7 +429,7 @@ def main():
     )
 
     dump_variant_calls(args.singletons, "singleton", sv_infos)
-    dump_variant_calls(args.multicalls, "multicall", sv_infos)
+    dump_variant_calls(args.multicalls, "multicalls", sv_infos)
 
     return 0
 
