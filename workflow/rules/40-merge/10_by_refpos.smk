@@ -71,6 +71,8 @@ rule merge_proximal_long_by_refpos:
     calls in a simple bedtools merge step, and then
     examine the groups to finally decide if calls
     should be merged.
+    TODO --- properly parameterize distance cutoff
+    and merge into rule above / create single rule
     """
     input:
         concat = rules.concat_vcf_subsets_by_ref_chrom.output.concat
@@ -95,7 +97,7 @@ rule merge_proximal_long_by_refpos:
         "pigz > {output.merged}"
 
 
-rule run_merge_identical_short_by_refpos:
+rule run_all_merge_identical_short_by_refpos:
     input:
         merged = expand(
             rules.merge_identical_short_by_refpos.output.merged,
@@ -105,10 +107,10 @@ rule run_merge_identical_short_by_refpos:
         )
 
 
-rule run_merge_proximal_long_by_refpos:
+rule run_all_merge_proximal_long_by_refpos:
     input:
         merged = expand(
-            rules.merge_identical_short_by_refpos.output.merged,
+            rules.merge_proximal_long_by_refpos.output.merged,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
             variant_group=["SV"]
