@@ -16,7 +16,7 @@ rule select_singletons_in_bracket_long:
             ref=SAMPLE_CALLSET_WILDCARDS[0]["ref"]
         ),
         call_table = rules.concat_vcf_subsets_by_ref_chrom.output.concat,
-        singletons = rules.flatten_merge_tables_long.output.singletons,
+        singletons = rules.flatten_merge_tables_long.output.single_tsv,
         stats_bracket = rules.determine_plausibility_thresholds_long.output.single_select_bracket
     output:
         sng_select_tsv = DIR_RES.joinpath(
