@@ -4,7 +4,7 @@ rule flatten_merge_tables_short:
         tsv = rules.merge_identical_short_by_refpos.output.merged
     output:
         single_tsv = DIR_RES.joinpath(
-            "callsets", "singletons" "{ref}", "tables",
+            "callsets", "singletons", "{ref}", "tables",
             "{ref}.{chrom}.{variant_group}.singletons.flat.tsv.gz"
         ),
         multi_tsv = DIR_RES.joinpath(
@@ -36,7 +36,7 @@ rule flatten_merge_tables_long:
         mrg = rules.merge_proximal_long_by_refpos.output.merged,
     output:
         single_tsv = DIR_RES.joinpath(
-            "callsets", "singletons" "{ref}", "tables",
+            "callsets", "singletons", "{ref}", "tables",
             "{ref}.{chrom}.{variant_group}.singletons.flat.tsv.gz"
         ),
         multi_tsv = DIR_RES.joinpath(
