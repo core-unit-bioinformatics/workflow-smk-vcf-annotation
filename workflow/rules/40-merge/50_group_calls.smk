@@ -2,7 +2,7 @@
 rule create_grouped_long_call_table:
     input:
         tsv = expand(
-            rules.flatten_merge_tables_long.output.multicalls,
+            rules.flatten_merge_tables_long.output.multi_tsv,
             chrom=config["reference_chromosomes"],
             allow_missing=True
         )
