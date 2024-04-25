@@ -74,11 +74,15 @@ rule concat_chrom_callsets_by_ref:
             "callsets", "concat_by_ref", "tables",
             "{ref}", "{ref}.{variant_group}.concat-calls.tsv.gz"
         )
+    benchmark:
+        DIR_RSRC.joinpath(
+            "30-tabulate", "10_vcf_tables", "{ref}.{variant_group}.concat-calls.rsrc"
+        )
     resources:
         mem_mb=lambda wildcards, attempt: {
             "SV": 2048,
-            "SNV": 8192,
-            "INDEL": 4096
+            "SNV": 24576,
+            "INDEL": 16384
         }[wildcards.variant_group] * attempt
     shell:
         "zgrep -e \"^chrom\\s\" {input.tables[0]} | gzip > {output.table}"
