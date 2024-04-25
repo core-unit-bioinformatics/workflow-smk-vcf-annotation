@@ -75,7 +75,11 @@ rule concat_chrom_callsets_by_ref:
             "{ref}", "{ref}.{variant_group}.concat-calls.tsv.gz"
         )
     resources:
-        mem_mb=lambda wildcards, attempt: 4096 * attempt
+        mem_mb=lambda wildcards, attempt: {
+            "SV": 4096,
+            "SNV": 16384,
+            "INDEL": 16384
+        }[wildcards.variant_group] * attempt
     run:
         import pandas as pd
         concat = []
