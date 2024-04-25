@@ -314,7 +314,7 @@ def main():
     with ctl.ExitStack() as exs:
         merged_table = exs.enter_context(xopen.xopen(args.merged_table, "r"))
 
-        column_names = get_table_header(merged_table, args.variant_group)
+        column_names = check_or_get_column_header(merged_table, args.variant_group)
         get_columns = field_getter(args.variant_group, column_names)
         row_processor = get_row_processor(args.variant_group)
         row_processor = fnt.partial(row_processor, *(stat_counter, get_columns))
