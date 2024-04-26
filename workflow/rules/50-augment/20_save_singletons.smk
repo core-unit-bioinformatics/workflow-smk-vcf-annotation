@@ -17,12 +17,12 @@ rule select_singletons_in_bracket_long:
         singletons = rules.flatten_merge_tables_long.output.single_tsv,
         stats_bracket = rules.determine_plausibility_thresholds_long.output.single_select_bracket
     output:
-        sng_select_tsv = DIR_RES.joinpath(
-            "callsets", "singletons", "{ref}", "tables",
+        sng_select_tsv = DIR_PROC.joinpath(
+            "50-augment", "20_save_singletons", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.singletons.bycatch-{bracket}.tsv.gz"
         ),
-        sng_select_bed = DIR_RES.joinpath(
-            "callsets", "singletons", "{ref}", "bed",
+        sng_select_bed = DIR_PROC.joinpath(
+            "50-augment", "20_save_singletons", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.singletons.bycatch-{bracket}.bed.gz"
         )
     wildcard_constraints:
@@ -39,12 +39,50 @@ rule select_singletons_in_bracket_long:
         "--out-table {output.sng_select_tsv} --out-bed {output.sng_select_bed}"
 
 
+rule concat_long_singletons_bycatch:
+    input:
+        tables = expand(
+            rules.select_singletons_in_bracket_long.output.sng_select_tsv,
+            chrom=config["reference_chromosomes"],
+            allow_missing=True
+        ),
+        bed = expand(
+            rules.select_singletons_in_bracket_long.output.sng_select_bed,
+            chrom=config["reference_chromosomes"],
+            allow_missing=True
+        ),
+    output:
+        table = DIR_RES.joinpath(
+            "callsets", "singletons", "{ref}", "tables",
+            "{ref}.{variant_group}.singletons.bycatch-{bracket}.tsv.gz"
+        ),
+        bed = DIR_RES.joinpath(
+            "callsets", "singletons", "{ref}", "bed",
+            "{ref}.{variant_group}.singletons.bycatch-{bracket}.tsv.gz"
+        )
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
+    run:
+        import pandas as pd
+        all_inputs = [sorted(input.tables), sorted(input.bed)]
+        all_outputs = [output.table, output.bed]
+
+        for infiles, outfile in zip(all_inputs, all_outputs):
+            concat = []
+            for infile in infiles:
+                df = pd.read_csv(infile, sep="\t", header=0)
+                df.sort_values(["start", "end"], inplace=True)
+                concat.append(df)
+            concat = pd.concat(concat, axis=0, ignore_index=False)
+            concat.to_csv(outfile)
+    # END OF RUN BLOCK
+
+
 rule run_all_save_singletons_long:
     input:
         tsv = expand(
-            rules.select_singletons_in_bracket_long.output.sng_select_tsv,
+            rules.concat_long_singletons_bycatch.output,
             ref=REFERENCES,
-            chrom=config["reference_chromosomes"],
             variant_group=["SV"],
             bracket=["25-75", "10-90"]
         )
