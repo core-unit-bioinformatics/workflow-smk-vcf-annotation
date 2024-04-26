@@ -1,31 +1,29 @@
 
 rule select_singletons_in_bracket_long:
-    """NB: the 'read_header' input is just >some<
-    table to get the full call table header w/o
-    resorting to ugly hacks such as realized in the
-    'sv_merging.py' script (TODO - change that as well)
+    """NB: the call table must be the complete/pre-merged
+    table because singletons that were already dropped
+    due to the initial clustering by distance will not be
+    be part of the post-merged singletons table.
 
-    call_table = 30-tabulate::10_vcf_tables::RULE
-    singletons = 40-merge::30_flatten_tables::RULE
+    All singletons:
+        call_table = 30-tabulate::10_vcf_tables::RULE
+
+    Singletons that were not merged w/ other calls
+    but that are close to a merged group call:
+        singletons = 40-merge::30_flatten_tables::RULE
     """
     input:
-        read_header = expand(
-            rules.convert_vcf_to_table.output.table,
-            sample=SAMPLE_CALLSET_WILDCARDS[0]["sample"],
-            callset=SAMPLE_CALLSET_WILDCARDS[0]["callset"],
-            ref=SAMPLE_CALLSET_WILDCARDS[0]["ref"]
-        ),
         call_table = rules.concat_vcf_subsets_by_ref_chrom.output.concat,
         singletons = rules.flatten_merge_tables_long.output.single_tsv,
         stats_bracket = rules.determine_plausibility_thresholds_long.output.single_select_bracket
     output:
         sng_select_tsv = DIR_RES.joinpath(
-            "call_tables", "singletons", "{ref}",
-            "{ref}.{chrom}.{variant_group}.singletons.{bracket}.tsv.gz"
+            "callsets", "singletons", "{ref}", "tables",
+            "{ref}.{chrom}.{variant_group}.singletons.bycatch-{bracket}.tsv.gz"
         ),
         sng_select_bed = DIR_RES.joinpath(
-            "call_tables", "singletons", "{ref}",
-            "{ref}.{chrom}.{variant_group}.singletons.{bracket}.bed.gz"
+            "callsets", "singletons", "{ref}", "bed",
+            "{ref}.{chrom}.{variant_group}.singletons.bycatch-{bracket}.bed.gz"
         )
     wildcard_constraints:
         variant_group="SV"
@@ -36,7 +34,7 @@ rule select_singletons_in_bracket_long:
     resources:
         mem_mb=lambda wildcards, attempt: 1024 * attempt
     shell:
-        "{params.script} --read-header {input.read_header} --call-table {input.call_table} "
+        "{params.script} --call-table {input.call_table} "
         "--singletons {input.singletons} --stats-bracket {input.stats_bracket} "
         "--out-table {output.sng_select_tsv} --out-bed {output.sng_select_bed}"
 

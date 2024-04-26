@@ -11,17 +11,6 @@ import xopen
 def parse_command_line():
 
     parser = argp.ArgumentParser()
-    parser.add_argument(
-        "--read-header", "-rhd",
-        type=lambda x: pl.Path(x).resolve(strict=True),
-        dest="read_header",
-        default=None,
-        help=(
-            "Read table header from this file (first line). "
-            "If set to None (the default), the input table "
-            "must have a valid header."
-        )
-    )
 
     parser.add_argument(
         "--call-table", "-calls", "-t",
@@ -79,18 +68,6 @@ def parse_command_line():
     return args
 
 
-def read_header(file_path):
-
-    with xopen.xopen(file_path) as table:
-        first_line = table.readline()
-        if "," in first_line:
-            header = first_line.strip().split(",")
-        else:
-            header = first_line.strip().split()
-    assert len(header) > 1
-    return header
-
-
 def main():
 
     args = parse_command_line()
@@ -101,10 +78,9 @@ def main():
         )["name"].values
     )
 
-    header = read_header(args.read_header)
     call_table = pd.read_csv(
-        args.call_table, sep="\t", header=None,
-        names=header, low_memory=False
+        args.call_table, sep="\t", header=0,
+        low_memory=False
     )
     call_table = call_table.loc[call_table["name"].isin(singletons), :].copy()
 
@@ -147,10 +123,11 @@ def main():
             with xopen.xopen(args.out_bed, "w") as bed_like:
                 _ = bed_like.write("#")
                 subset[
-                    ["chrom", "start", "end", "name", "size", "vartype"]
+                    ["chrom", "start", "end", "name", "size", "vartype", "sample"]
                 ].to_csv(bed_like, sep="\t", header=True, index=False)
 
     elif args.empty_output:
+        header = list(call_table.columns)
         args.out_table.parent.mkdir(exist_ok=True, parents=True)
         with xopen.xopen(args.out_table, "w") as dump:
             _ = dump.write("\t".join(header) + "\n")

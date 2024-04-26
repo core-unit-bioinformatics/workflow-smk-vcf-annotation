@@ -14,7 +14,8 @@ rule create_merged_group_indicator_table:
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
     resources:
-        mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
+        mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt,
+        time_hrs=lambda wildcards, attempt: attempt * attempt
     params:
         script=find_script("merge_by_group")
     shell:
@@ -27,7 +28,7 @@ rule dump_indicator_table_to_bedlike:
     output:
         bed_like = DIR_RES.joinpath(
             "callsets", "merged_groups", "{ref}", "bed",
-            "{ref}.{variant_group}.group-indicator-table.bed.gz"
+            "{ref}.{variant_group}.merged-groups.sample-sets.bed.gz"
         )
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
