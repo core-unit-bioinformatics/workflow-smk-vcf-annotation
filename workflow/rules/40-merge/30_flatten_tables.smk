@@ -47,7 +47,7 @@ rule flatten_merge_tables_long:
             "statistics", "counts", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.flat-tables.count-stats.tsv"
         ),
-        desc_stats = DIR_PROC.joinpath(
+        desc_stats = DIR_RES.joinpath(
             "statistics", "descriptive", "{ref}", "by_chrom",
             "{ref}.{chrom}.{variant_group}.flat-tables.desc-stats.tsv"
         ),

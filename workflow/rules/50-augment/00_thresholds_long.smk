@@ -41,7 +41,7 @@ rule determine_plausibility_thresholds_long:
             logerr(err_msg)
             raise ValueError(err_msg)
 
-        select_occurrence = df["occurrence"] == "multiple"
+        select_occurrence = df["occurrence"] == "multicall"
         select_lower = df["statistic"] == bracket_low
         select_upper = df["statistic"] == bracket_high
         selector = select_occurrence & (select_lower | select_upper)
@@ -49,13 +49,13 @@ rule determine_plausibility_thresholds_long:
         if sub.empty:
             err_msg = (
                 f"{_this_fun}\n"
-                "Subset operation resulted in empty dataframe. "
-                f"Cannot select statistics bracket from file: {input.desc_stats}\n"
-                f"Low percentile value: {params.t_low} - exists? {check_low_exists}\n"
-                f"High percentile value: {params.t_high} - exists? {check_high_exists}\n"
+                "WARNING: Subset operation resulted in empty dataframe. "
+                f"No calls in statistics bracket in file: {input.desc_stats}\n"
+                f"Low percentile value {params.t_low} exists! {check_low_exists}\n"
+                f"High percentile value {params.t_high} exists! {check_high_exists}\n"
+                f"Generating empty output file: {output.single_select_bracket}\n"
             )
             logerr(err_msg)
-            raise ValueError(err_msg)
         sub.to_csv(output.single_select_bracket, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
