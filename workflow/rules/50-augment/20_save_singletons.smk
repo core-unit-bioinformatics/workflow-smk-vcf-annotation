@@ -74,7 +74,7 @@ rule concat_long_singletons_bycatch:
                 df.sort_values(["start", "end"], inplace=True)
                 concat.append(df)
             concat = pd.concat(concat, axis=0, ignore_index=False)
-            concat.to_csv(outfile)
+            concat.to_csv(outfile, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
