@@ -121,7 +121,7 @@ rule extract_contrast_merged_group_calls:
         "zgrep -F -f {input.call_ids} {input.table} | gzip >> {output.table}"
 
 
-rule dump_contrast_indicator_table_to_bedlike:
+rule dump_contrast_merged_indicator_table_to_bedlike:
     input:
         tsv = rules.extract_contrast_merged_group_calls.output.table
     output:
@@ -143,10 +143,10 @@ rule dump_contrast_indicator_table_to_bedlike:
     # END OF RUN BLOCK
 
 
-rule run_all_build_contrast_id_lists:
+rule run_all_contrast_merged_group_calls:
     input:
         bed_like = expand(
-            rules.dump_contrast_indicator_table_to_bedlike.output.bed_like,
+            rules.dump_contrast_merged_indicator_table_to_bedlike.output.bed_like,
             build_valid_contrast_group_combinations,
             ref=REFERENCE_GENOMES,
             variant_group=["SV", "INDEL"],
