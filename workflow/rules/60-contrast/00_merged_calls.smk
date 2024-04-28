@@ -61,18 +61,18 @@ rule get_grouped_multi_call_listing:
         select_group1 = df["group_label"] == 1
         assert select_group1.any()
         group1_calls = set().union(
-            *df.loc[select_group1, "call_group_ids"].apply(lambda call_ids: set(call_ids.split(",")))
+            *df.loc[select_group1, "group_id"].apply(lambda call_ids: set(call_ids.split(",")))
         )
         select_group2 = df["group_label"] == 2
         assert select_group2.any()
         group2_calls = set().union(
-            *df.loc[select_group2, "call_group_ids"].apply(lambda call_ids: set(call_ids.split(",")))
+            *df.loc[select_group2, "group_id"].apply(lambda call_ids: set(call_ids.split(",")))
         )
 
         select_other = df["group_label"] == 0
         assert select_other.any()
         other_calls = set().union(
-                *df.loc[select_other, "call_group_ids"].apply(lambda call_ids: set(call_ids.split(",")))
+                *df.loc[select_other, "group_id"].apply(lambda call_ids: set(call_ids.split(",")))
         )
 
         # fully disjoin call sets - see docstring for explanation
