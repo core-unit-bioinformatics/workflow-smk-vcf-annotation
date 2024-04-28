@@ -32,7 +32,7 @@ def build_valid_contrast_group_combinations(*wildcards):
                 comb3 = dict(comb2)
                 comb3["group_id"] = "other"
 
-    return sorted(valid_combinations)
+    return valid_combinations
 
 
 def get_contrast_group_call_ids(wildcards):
