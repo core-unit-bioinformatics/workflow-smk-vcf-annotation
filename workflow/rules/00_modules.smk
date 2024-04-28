@@ -8,6 +8,7 @@ to "commons/00_commons.smk"
 include: "00-prepare/settings.smk"
 include: "00-prepare/sample_table.smk"
 include: "00-prepare/ref_chroms.smk"
+include: "00-prepare/contrasts.smk"
 
 include: "10-norm/norm_index.smk"
 
