@@ -11,15 +11,15 @@ rule get_grouped_multi_call_listing:
     output:
         calls_group1 = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast.{contrast}-group1.group-call-ids.txt"
+            "{ref}.{variant_group}.contrast.{contrast}.group1.group-call-ids.txt"
         ),
         calls_group2 = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast.{contrast}-group2.group-call-ids.txt"
+            "{ref}.{variant_group}.contrast.{contrast}.group2.group-call-ids.txt"
         ),
         not_selected = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast.{contrast}-other.group-call-ids.txt"
+            "{ref}.{variant_group}.contrast.{contrast}.other.group-call-ids.txt"
         ),
         contrast_info = DIR_RES.joinpath(
             "contrast", "{ref}",
