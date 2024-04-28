@@ -11,19 +11,19 @@ rule get_grouped_multi_call_listing:
     output:
         calls_group1 = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast-{contrast}-group1.group-call-ids.txt"
+            "{ref}.{variant_group}.contrast.{contrast}-group1.group-call-ids.txt"
         ),
         calls_group2 = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast-{contrast}-group2.group-call-ids.txt"
+            "{ref}.{variant_group}.contrast.{contrast}-group2.group-call-ids.txt"
         ),
         not_selected = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast-{contrast}-other.group-call-ids.txt"
+            "{ref}.{variant_group}.contrast.{contrast}-other.group-call-ids.txt"
         ),
         contrast_info = DIR_RES.joinpath(
             "contrast", "{ref}",
-            "{ref}.{variant_group}.contrast-{contrast}.group-info.txt"
+            "{ref}.{variant_group}.contrast.{contrast}.group-info.txt"
         )
     resources:
         mem_mb=lambda wildcards, attempt: 1024 * attempt
@@ -45,7 +45,7 @@ rule get_grouped_multi_call_listing:
                 group_label = 0
             elif group1_match:  # and not group2
                 group_label = 1
-            elif group2_match:  # and not group2
+            elif group2_match:  # and not group1
                 group_label = 2
             else:
                 # no sample matches for either group
@@ -55,7 +55,7 @@ rule get_grouped_multi_call_listing:
         group1_samples = CONTRAST[wildcards.contrast]["samples1"]
         group2_samples = CONTRAST[wildcards.contrast]["samples2"]
 
-        group_labels = df["subset"].apply(check_sample_group_match, args=(group1_samples, group2_samples))
+        group_labels = df["sample_set"].apply(check_sample_group_match, args=(group1_samples, group2_samples))
         df["group_label"] = group_labels
 
         select_group1 = df["group_label"] == 1
@@ -111,7 +111,7 @@ rule extract_contrast_merged_group_calls:
     output:
         table = DIR_RES.joinpath(
             "callsets", "contrasts", "{ref}", "tables",
-            "{ref}.{variant_group}.contrast-{contrast}.{group_id}.group-indicator-table.tsv.gz"
+            "{ref}.{variant_group}.contrast.{contrast}.{group_id}.group-indicator-table.tsv.gz"
         )
     shell:
         "zcat {input.table} | egrep \"^chrom\" | gzip > {output.table}"
@@ -125,7 +125,7 @@ rule dump_contrast_merged_indicator_table_to_bedlike:
     output:
         bed_like = DIR_RES.joinpath(
             "callsets", "contrasts", "{ref}", "bed",
-            "{ref}.{variant_group}.contrast-{contrast}.{group_id}.merged-groups.sample-sets.bed.gz"
+            "{ref}.{variant_group}.contrast.{contrast}.{group_id}.merged-groups.sample-sets.bed.gz"
         )
     wildcard_constraints:
         contrast=CONSTRAINT_CONTRASTS,
