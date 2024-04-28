@@ -5,7 +5,7 @@ import itertools
 def build_valid_contrast_group_combinations(*wildcards):
 
     flat_wildcards = collections.defaultdict(list)
-    for wc_name, wc_value in itertools.chain.from_iterable(*wildcards):
+    for wc_name, wc_value in itertools.chain.from_iterable(wildcards):
         flat_wildcards[wc_name].append(wc_value)
 
     all_refs = sorted(set(flat_wildcards["ref"]))
