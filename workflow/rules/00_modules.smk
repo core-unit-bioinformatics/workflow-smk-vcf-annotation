@@ -27,6 +27,7 @@ include: "40-merge/50_group_calls.smk"
 include: "50-augment/00_thresholds_long.smk"
 include: "50-augment/20_save_singletons.smk"
 
+include: "60-contrast/pyutils.smk"
 include: "60-contrast/00_merged_calls.smk"
 
 include: "70-intersect/10_closest_regions.smk"
