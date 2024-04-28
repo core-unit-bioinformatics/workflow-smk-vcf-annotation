@@ -44,6 +44,7 @@ if _CONTRAST_STRUCT is not None:
                     n += 1
                     continue
                 contrast_spec[f"group{n}"] = group
+                assert isinstance(samples, list)
                 contrast_spec[f"samples{n}"] = samples
                 n += 1
             assert n == 3
@@ -62,9 +63,9 @@ if _CONTRAST_STRUCT is not None:
             contrast_spec = {
                 "name": contrast_name,
                 "group1": contrast_groups[0],
-                "samples1": contrast_groups[0],
+                "samples1": [contrast_groups[0]],
                 "group2": contrast_groups[1],
-                "samples2": contrast_groups[1]
+                "samples2": [contrast_groups[1]]
             }
             assert contrast_name not in CONTRAST, f"Duplicated contrast name: {contrast_name}"
             CONTRAST[contrast_name] = contrast_spec
