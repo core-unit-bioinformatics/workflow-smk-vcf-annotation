@@ -81,7 +81,7 @@ rule get_grouped_multi_call_listing:
         g2oth_intersect = group2_calls.intersection(other_calls)
         group1_calls = group1_calls - g1g2_intersect - g1oth_intersect
         group2_calls = group2_calls - g1g2_intersect - g2oth_intersect
-        other_calls = other_calls.union(g1_g2_intersect)
+        other_calls = other_calls.union(g1g2_intersect)
 
         assert len(group1_calls.intersection(group2_calls)) == 0
         assert len(group1_calls.intersection(other_calls)) == 0
@@ -89,7 +89,7 @@ rule get_grouped_multi_call_listing:
         assert len(group1_calls) + len(group2_calls) + len(other_calls) == df.shape[0]
 
         callsets = [group1_calls, group2_calls, other_calls]
-        outfiles = [output.calls_group1, calls_group2, not_selected]
+        outfiles = [output.calls_group1, output.calls_group2, output.not_selected]
 
         for calls, outfile in zip(callsets, outfiles):
             with open(outfile, "w") as dump:
