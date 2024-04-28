@@ -74,5 +74,13 @@ if _CONTRAST_STRUCT is not None:
     # populate lists CONTRAST_GROUPS1 and CONTRAST_GROUPS2
     # to be used as wildcard replacements
     for contrast, contrast_spec in CONTRAST.items():
+        if contrast_spec["group1"] == "other":
+            raise ValueError(f"Reserved group name 'other' detected in contrast {contrast}")
+        if contrast_spec["group2"] == "other":
+            raise ValueError(f"Reserved group name 'other' detected in contrast {contrast}")
+
         CONTRAST_GROUPS1.append(contrast_spec["group1"])
         CONTRAST_GROUPS2.append(contrast_spec["group2"])
+
+CONSTRAINT_CONTRASTS = build_constraint(sorted(CONTRAST.keys()))
+CONSTRAINT_CONTRAST_GROUPS = build_constraint(sorted(CONTRAST_GROUPS1+CONTRAST_GROUPS2+["other"]))

@@ -111,10 +111,8 @@ rule extract_contrast_merged_group_calls:
     output:
         table = DIR_RES.joinpath(
             "callsets", "contrasts", "{ref}", "tables",
-            "{ref}.{variant_group}.contrast-{contrast}-{group_id}.group-indicator-table.tsv.gz"
+            "{ref}.{variant_group}.contrast-{contrast}.{group_id}.group-indicator-table.tsv.gz"
         )
-    wildcard_constraints:
-        group_id="(group1|group2|other)"
     shell:
         "zcat {input.table} | egrep \"^chrom\" | gzip > {output.table}"
             " && "
@@ -127,8 +125,11 @@ rule dump_contrast_merged_indicator_table_to_bedlike:
     output:
         bed_like = DIR_RES.joinpath(
             "callsets", "contrasts", "{ref}", "bed",
-            "{ref}.{variant_group}.contrast-{contrast}-{group_id}.merged-groups.sample-sets.bed.gz"
+            "{ref}.{variant_group}.contrast-{contrast}.{group_id}.merged-groups.sample-sets.bed.gz"
         )
+    wildcard_constraints:
+        contrast=CONSTRAINT_CONTRASTS,
+        group_id=CONSTRAINT_CONTRAST_GROUPS
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
     run:
