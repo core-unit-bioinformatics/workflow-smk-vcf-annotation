@@ -56,11 +56,12 @@ if _CONTRAST_STRUCT is not None:
                     samples2 = [s for s in SAMPLES if s not in samples1]
                     contrast_spec["group2"] = group
                     contrast_spec["samples2"] = samples2
+                    n += 1
                     continue
                 contrast_spec[f"group{n}"] = group
                 contrast_spec[f"samples{n}"] = samples
                 n += 1
-            assert n == 2
+            assert n == 3
             CONTRAST[contrast_name] = contrast_spec
 
         elif isinstance(contrast_groups, list):
