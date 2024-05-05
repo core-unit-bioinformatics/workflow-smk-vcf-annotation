@@ -58,7 +58,7 @@ rule concat_long_singletons_bycatch:
         ),
         bed = DIR_RES.joinpath(
             "callsets", "singletons", "{ref}", "bed",
-            "{ref}.{variant_group}.singletons.bycatch-{bracket}.tsv.gz"
+            "{ref}.{variant_group}.singletons.bycatch-{bracket}.bed.gz"
         )
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
