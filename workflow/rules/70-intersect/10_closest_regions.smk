@@ -4,7 +4,8 @@ rule find_closest_annotated_region:
         calls = lambda wildcards: get_bedlike_callset(wildcards.callset_type),
         ann = lambda wildcards: DIR_GLOBAL_REF.joinpath(
             config["annotations"][wildcards.ref][wildcards.annotation]
-        )
+        ),
+        gsize = rules.write_genome_size_file.output.gsize
     output:
         tsv = DIR_PROC.joinpath(
             "70-intersect", "closest_regions",
@@ -15,7 +16,7 @@ rule find_closest_annotated_region:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
-        "bedtools closest -d -a {input.calls} -b {input.ann}"
+        "bedtools closest -g {input.gsize} -d -a {input.calls} -b {input.ann}"
             " | "
         "gzip > {output.tsv}"
 
