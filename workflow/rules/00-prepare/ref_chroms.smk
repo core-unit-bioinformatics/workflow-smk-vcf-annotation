@@ -30,7 +30,6 @@ rule write_genome_size_file:
             for line in listing:
                 chrom, size = line.split()[:2]
                 chrom_sizes.append((chrom, int(size)))
-        chrom_sizes = sorted(chrom_sizes, key=lambda t: t[1], reverse=True)
         with open(output.gsize, "w") as listing:
             for chrom, size in chrom_sizes:
                 _ = listing.write(f"{chrom}\t{size}\n")
