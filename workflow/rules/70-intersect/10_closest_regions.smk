@@ -23,7 +23,8 @@ rule norm_enforce_sort_order_annotation:
     input:
         bedlike = lambda wildcards: DIR_GLOBAL_REF.joinpath(
             config["annotations"][wildcards.ref][wildcards.annotation]
-        )
+        ),
+        chrom_list = rules.write_ref_chrom_lists.output.listing
     output:
         bedlike = temp(
             DIR_PROC.joinpath(
@@ -34,6 +35,8 @@ rule norm_enforce_sort_order_annotation:
         grep = lambda wildcards, input: select_grep_cmd(input.bedlike)
     shell:
         "{params.grep} -E -v \"^#\" {input.bedlike}"
+            " | "
+        "grep -w -f {input.chrom_list}"
             " | "
         "sort -V -k1,1 -k2,2n -k3,3n"
             " | "
