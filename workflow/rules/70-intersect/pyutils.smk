@@ -1,4 +1,15 @@
 
+
+def select_grep_cmd(file_path):
+
+    file_path = pathlib.Path(file_path)
+    if file_path.suffix() == ".gz":
+        grep_cmd = "zgrep"
+    else:
+        grep_cmd = "grep"
+    return grep_cmd
+
+
 def get_bedlike_callset(callset_type):
 
     if callset_type == "groupcalls":
