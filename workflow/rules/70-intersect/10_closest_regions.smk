@@ -12,7 +12,7 @@ rule norm_enforce_sort_order_callset:
     params:
         grep = lambda wildcards, input: select_grep_cmd(input.callset)
     shell:
-        "{params.grep} -e -v \"^#\" {input.callset}"
+        "{params.grep} -E -v \"^#\" {input.callset}"
             " | "
         "sort -V -k1,1 -k2,2n -k3,3n"
             " | "
@@ -33,7 +33,7 @@ rule norm_enforce_sort_order_annotation:
     params:
         grep = lambda wildcards, input: select_grep_cmd(input.bedlike)
     shell:
-        "{params.grep} -e -v \"^#\" {input.bedlike}"
+        "{params.grep} -E -v \"^#\" {input.bedlike}"
             " | "
         "sort -V -k1,1 -k2,2n -k3,3n"
             " | "
