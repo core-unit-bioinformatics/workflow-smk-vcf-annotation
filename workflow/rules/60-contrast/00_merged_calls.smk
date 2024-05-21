@@ -113,6 +113,8 @@ rule extract_contrast_merged_group_calls:
             "callsets", "contrasts", "{ref}", "tables",
             "{ref}.{variant_group}.contrast.{contrast}.{group_id}.group-indicator-table.tsv.gz"
         )
+    resources:
+        mem_mb=lambda wildcards, attempt: 1024 * attempt * attempt
     shell:
         "zcat {input.table} | egrep \"^chrom\" | gzip > {output.table}"
             " && "
