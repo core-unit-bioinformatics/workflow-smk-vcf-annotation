@@ -9,6 +9,9 @@ rule norm_enforce_sort_order_callset:
                 "{ref}.{variant_group}.{callset_type}.bed.gz"
             )
         )
+    wildcard_constraints:
+        ref=CONSTRAINT_REFS,
+        variant_group=CONSTRAINT_VAR_GROUPS
     params:
         grep = lambda wildcards, input: select_grep_cmd(input.callset)
     shell:
@@ -79,6 +82,9 @@ rule reheader_intersect_tables:
             "annotations", "separate", "closest_region",
             "{ref}.{variant_group}.{callset_type}.closest.{annotation}.bed.gz"
         )
+    wildcard_constraints:
+        ref=CONSTRAINT_REFS,
+        variant_group=CONSTRAINT_VAR_GROUPS
     run:
         import gzip
         import pandas as pd

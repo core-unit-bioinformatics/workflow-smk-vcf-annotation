@@ -102,12 +102,12 @@ rule run_all_concat_vcf_subsets_by_ref:
             rules.concat_vcf_subsets_by_ref_chrom.output.concat,
             ref=REFERENCES,
             chrom=config["reference_chromosomes"],
-            variant_group=["SNV", "INDEL", "SV"]
+            variant_group=KNOWN_VARIANT_GROUPS
         ),
         res_table = expand(
             rules.concat_chrom_callsets_by_ref.output.table,
             ref=REFERENCES,
-            variant_group=["SNV", "INDEL", "SV"]
+            variant_group=KNOWN_VARIANT_GROUPS
         )
 
 
