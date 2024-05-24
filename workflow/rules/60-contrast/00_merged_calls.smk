@@ -172,7 +172,7 @@ rule dump_contrast_merged_indicator_table_to_bedlike:
 
         df = pd.read_csv(input.tsv, sep="\t", header=0, usecols=select_columns)
         group_purity = df["sample_set"].apply(calc_group_purity, args=(group_samples, invert))
-        group_purity = pd.DataFrame(
+        group_purity = pd.DataFrame.from_records(
             group_purity, index=df.index,
             columns=[f"{wildcards.group_id}_frac", f"{wildcards.group_id}_members"]
         )
