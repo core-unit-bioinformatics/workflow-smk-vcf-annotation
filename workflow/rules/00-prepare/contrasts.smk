@@ -12,6 +12,7 @@
 CONTRAST = dict()
 CONTRAST_GROUPS1 = []
 CONTRAST_GROUPS2 = []
+CONTRAST_CALLSET_LABELS = []
 _CONTRAST_STRUCT = config.get("contrast", None)
 if _CONTRAST_STRUCT is not None:
     for contrast_name, contrast_groups in _CONTRAST_STRUCT.items():
@@ -82,6 +83,8 @@ if _CONTRAST_STRUCT is not None:
 
         CONTRAST_GROUPS1.append(contrast_spec["group1"])
         CONTRAST_GROUPS2.append(contrast_spec["group2"])
+        CONTRAST_CALLSET_LABELS.append(f"contrast.{contrast}.{contrast_spec['group1']}")
+        CONTRAST_CALLSET_LABELS.append(f"contrast.{contrast}.{contrast_spec['group2']}")
 
 CONSTRAINT_CONTRASTS = build_constraint(sorted(CONTRAST.keys()))
 CONSTRAINT_CONTRAST_GROUPS = build_constraint(sorted(CONTRAST_GROUPS1+CONTRAST_GROUPS2+["other"]))

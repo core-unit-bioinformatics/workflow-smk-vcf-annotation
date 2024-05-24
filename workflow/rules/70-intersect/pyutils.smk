@@ -28,6 +28,14 @@ def get_bedlike_callset(callset_type):
             bracket=bracket,
             allow_missing=True
         )
+    elif callset_type.startswith("contrast"):
+        _, contrast, group_id = callset_type.split(".")
+        callset_bed = expand(
+            rules.dump_contrast_merged_indicator_table_to_bedlike.output.bed_like,
+            contrast=contrast,
+            group_id=group_id,
+            allow_missing=True
+        )
     else:
         raise ValueError(f"Unknown callset type: {callset_type}")
 

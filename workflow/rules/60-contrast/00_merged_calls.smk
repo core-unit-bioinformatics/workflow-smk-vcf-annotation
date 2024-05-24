@@ -122,6 +122,10 @@ rule extract_contrast_merged_group_calls:
 
 
 rule dump_contrast_merged_indicator_table_to_bedlike:
+    """This rule extends the dumped BED-like file by one
+    column that indicates the amount of group samples
+    that are in the sample set for the respective call.
+    """
     input:
         tsv = rules.extract_contrast_merged_group_calls.output.table
     output:
@@ -140,7 +144,39 @@ rule dump_contrast_merged_indicator_table_to_bedlike:
             "chrom", "start", "end", "group_id",
             "size", "vartype", "distinct_samples", "sample_set"
         ]
+        invert = False
+        if CONTRAST[wildcards.contrast]["group1"] == wildcards.group_id:
+            group_samples = CONTRAST[wildcards.contrast]["samples1"]
+        elif CONTRAST[wildcards.contrast]["group2"] == wildcards.group_id:
+            group_samples = CONTRAST[wildcards.contrast]["samples2"]
+        elif wildcards.group_id == "other":
+            group_samples = set(
+                CONTRAST[wildcards.contrast]["samples1"]
+            ).union(set(CONTRAST[wildcards.contrast]["samples2"]))
+            invert = True
+        else:
+            logerr(f"Invalid group ID for contrast {wildcards.contrast}: {wildcards.group_id}")
+            raise ValueError(f"Unknown group ID {wildcards.group_id} for contrast {wildcards.contrast}")
+
+        def calc_group_purity(sample_set, group_samples, invert=False):
+
+            sample_set = set(sample_set.split(","))
+            total_samples = len(sample_set)
+            if invert:
+                group_samples = sum(s not in group_samples for s in sample_set)
+            else:
+                group_samples = sum(s in group_samples for s in sample_set)
+            purity_frac = round(group_samples/total_samples, 2)
+            purity_explicit = f"{group_samples}/{total_samples}"
+            return purity_frac, purity_explicit
+
         df = pd.read_csv(input.tsv, sep="\t", header=0, usecols=select_columns)
+        group_purity = df["sample_set"].apply(calc_group_purity, args=(group_samples, invert))
+        group_purity = pd.DataFrame(
+            group_purity, index=df.index,
+            columns=[f"{wildcards.group_id}_frac", f"{wildcards.group_id}_members"]
+        )
+        df = pd.concat([df, group_purity], axis=1, ignore_index=False)
         df.rename({"chrom": "#chrom"}, axis=1, inplace=True)
         df.to_csv(output.bed_like, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
