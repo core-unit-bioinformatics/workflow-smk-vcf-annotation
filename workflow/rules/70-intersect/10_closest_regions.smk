@@ -87,6 +87,7 @@ rule reheader_intersect_tables:
         variant_group=CONSTRAINT_VAR_GROUPS
     run:
         import gzip
+        import pathlib as pl
         import pandas as pd
 
         callset_header = gzip.open(input.call_bed, "rt").readline().strip().split()
@@ -110,6 +111,8 @@ rule reheader_intersect_tables:
                 logerr(f"Reference file w/o header: {input.ref_bed}")
                 raise ValueError(f"Malformed reference file (>4 columns, no header): {input.ref_bed}")
         else:
+            # this would commonly be something like #chrom
+            ref_header[0] = "chrom2"
             ref_header = list(map(str.lower, ref_header))
 
         header_intersect = set(callset_header).intersection(set(ref_header))
