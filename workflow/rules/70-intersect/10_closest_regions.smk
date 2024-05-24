@@ -113,6 +113,10 @@ rule reheader_intersect_tables:
         else:
             # this would commonly be something like #chrom
             ref_header[0] = "chrom2"
+            # and disambiguate if needed
+            if ref_header[1] == "start":
+                ref_header[1] = "start2"
+                ref_header[2] = "end2"
             ref_header = list(map(str.lower, ref_header))
 
         header_intersect = set(callset_header).intersection(set(ref_header))
