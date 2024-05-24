@@ -27,7 +27,7 @@ def get_bedlike_callset(callset_type):
             rules.concat_long_singletons_bycatch.output.bed,
             bracket=bracket,
             allow_missing=True
-        )
+        )[0]
     elif callset_type.startswith("contrast"):
         _, contrast, group_id = callset_type.split(".")
         callset_bed = expand(
@@ -35,7 +35,7 @@ def get_bedlike_callset(callset_type):
             contrast=contrast,
             group_id=group_id,
             allow_missing=True
-        )
+        )[0]
     else:
         raise ValueError(f"Unknown callset type: {callset_type}")
 
