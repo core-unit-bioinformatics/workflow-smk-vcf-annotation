@@ -36,7 +36,8 @@ rule dump_indicator_table_to_bedlike:
         import pandas as pd
         select_columns = [
             "chrom", "start", "end", "group_id",
-            "size", "vartype", "distinct_samples", "sample_set"
+            "size", "vartype", "distinct_samples",
+            "sample_set", "alt_allele_freq"
         ]
         df = pd.read_csv(input.tsv, sep="\t", header=0, usecols=select_columns)
         df.rename({"chrom": "#chrom"}, axis=1, inplace=True)
