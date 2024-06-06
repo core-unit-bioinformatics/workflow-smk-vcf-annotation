@@ -99,7 +99,7 @@ def output_header(output_type):
 
     only_multicalls = ["group_id", "group_size"]
 
-    allele_rep = ["ref_code", "alt_code", "alt_freq"]
+    allele_rep = ["ref_code", "alt_code", "alt_allele_freq"]
 
     if output_type == "singletons":
         header = positional + commons + allele_rep

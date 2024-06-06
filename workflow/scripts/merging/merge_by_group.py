@@ -50,7 +50,7 @@ def make_by_group_table(tab_calls):
             "size": lambda s: int(s.median()),
             "vartype": lambda s: s.mode()[0],  # in case of ties, select first
             "group_size": "max",
-            "alt_freq": "mean"
+            "alt_allele_freq": "mean"
         }
     )
     by_group["distinct_samples"] = 0
