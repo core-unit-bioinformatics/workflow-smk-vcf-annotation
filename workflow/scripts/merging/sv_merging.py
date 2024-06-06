@@ -295,12 +295,12 @@ def dump_variant_calls(out_file, subset, sv_infos):
 
     if subset == "singleton":
         header = common_header + [
-             "ref_allele_repr", "alt_allele_repr"
+             "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"
         ]
         selected_calls = sv_infos.loc[sv_infos["group_id"] == "singleton", :]
     elif subset == "multicalls":
         header = common_header + [
-            "group_id", "group_size", "ref_allele_repr", "alt_allele_repr"
+            "group_id", "group_size", "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"
         ]
         selected_calls = sv_infos.loc[sv_infos["group_id"] != "singleton", :]
     else:

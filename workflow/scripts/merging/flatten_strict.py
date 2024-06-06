@@ -74,7 +74,8 @@ def get_table_header(variant_group):
 
     # columns 6,7,8,16,20
     commons = [
-        "name", "sample", "callset", "ref_allele_repr", "alt_allele_repr"
+        "name", "sample", "callset",
+        "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"
     ]
 
     known_headers = {
@@ -98,7 +99,7 @@ def output_header(output_type):
 
     only_multicalls = ["group_id", "group_size"]
 
-    allele_rep = ["ref_code", "alt_code"]
+    allele_rep = ["ref_code", "alt_code", "alt_freq"]
 
     if output_type == "singletons":
         header = positional + commons + allele_rep
@@ -129,9 +130,9 @@ def check_or_get_column_header(table_file, variant_group):
 def field_getter(variant_group, column_names):
 
     if variant_group == "SNV":
-        select_fields = ["name", "sample", "callset", "ref_allele_repr", "alt_allele_repr"]
+        select_fields = ["name", "sample", "callset", "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"]
     elif variant_group == "INDEL":
-        select_fields = ["name", "sample", "callset", "vartype", "size", "ref_allele_repr", "alt_allele_repr"]
+        select_fields = ["name", "sample", "callset", "vartype", "size", "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"]
     else:
         raise NotImplementedError(f"no field getter for: {variant_group}")
 
@@ -165,12 +166,13 @@ def check_proper_merge_snv(stat_counter, get_fields, row):
 
     ref_pos = "\t".join([row["chrom"], row["start"], row["end"]])
 
-    call_ids, samples, callsets, ref_alleles, alt_alleles = get_fields(row)
+    call_ids, samples, callsets, ref_alleles, alt_alleles, alt_freqs = get_fields(row)
     call_ids = call_ids.split("|")
     samples = samples.split("|")
     callsets = callsets.split("|")
     alt_alleles = alt_alleles.split("|")
     alt_alleles = [decode_snv_allele_code(a) for a in alt_alleles]
+    alt_freqs = [float(af) for af in alt_freqs.split("|")]
     ref_alleles = ref_alleles.split("|")
     ref_alleles = [decode_snv_allele_code(r) for r in ref_alleles]
 
@@ -181,13 +183,13 @@ def check_proper_merge_snv(stat_counter, get_fields, row):
         # is multiple
         group_size = len(call_ids)
         group_id = hl.md5("".join(sorted(call_ids)).encode("utf-8")).hexdigest()
-        for call_id, sample, callset, ref, alt in zip(call_ids, samples, callsets, ref_alleles, alt_alleles):
+        for call_id, sample, callset, ref, alt, freq in zip(call_ids, samples, callsets, ref_alleles, alt_alleles, alt_freqs):
             stat_counter[(sample, callset, "SNV", "multiple")] += 1
             out_info_multis += (
                 f"{ref_pos}\t{call_id}\tSNV\t1\t"
                 f"{sample}\t{callset}\t"
                 f"{group_id}\t{group_size}\t"
-                f"{ref}\t{alt}\n"
+                f"{ref}\t{alt}\t{freq}\n"
             )
     else:
         # is singleton
@@ -195,7 +197,7 @@ def check_proper_merge_snv(stat_counter, get_fields, row):
         out_info_singles = (
             f"{ref_pos}\t{call_ids[0]}\t"
             f"SNV\t1\t{samples[0]}\t{callsets[0]}\t"
-            f"{ref_alleles[0]}\t{alt_alleles[0]}\n"
+            f"{ref_alleles[0]}\t{alt_alleles[0]}\t{alt_freqs[0]}\n"
         )
     return out_info_singles, out_info_multis
 
@@ -204,7 +206,7 @@ def check_proper_merge_indel(stat_counter, get_fields, row):
 
     ref_pos = "\t".join([row["chrom"], row["start"], row["end"]])
 
-    call_ids, samples, callsets, var_types, var_lengths, ref_alleles, alt_alleles = get_fields(row)
+    call_ids, samples, callsets, var_types, var_lengths, ref_alleles, alt_alleles, alt_freqs = get_fields(row)
     call_ids = call_ids.split("|")
     samples = samples.split("|")
     callsets = callsets.split("|")
@@ -220,6 +222,7 @@ def check_proper_merge_indel(stat_counter, get_fields, row):
     ref_ids["0:0:0:0"] = 0
 
     alt_alleles = alt_alleles.split("|")
+    alt_freqs = [float(af) for af in alt_freqs.split("|")]
     alt_ids = col.Counter(alt_alleles)
     alt_ids = dict(
         (alt_allele, allele_id) for allele_id, (alt_allele, allele_count)
@@ -235,23 +238,23 @@ def check_proper_merge_indel(stat_counter, get_fields, row):
         # first group by variant type and length
         type_buckets = col.defaultdict(list)
 
-        for var_type, var_length, call_id, sample, callset, ref, alt in zip(
-                var_types, var_lengths, call_ids, samples, callsets, ref_alleles, alt_alleles
+        for var_type, var_length, call_id, sample, callset, ref, alt, freq in zip(
+                var_types, var_lengths, call_ids, samples, callsets, ref_alleles, alt_alleles, alt_freqs
             ):
 
             type_buckets[(var_type, var_length)].append(
-                (call_id, sample, callset, f"R{ref_ids[ref]}", f"A{alt_ids[alt]}")
+                (call_id, sample, callset, f"R{ref_ids[ref]}", f"A{alt_ids[alt]}", freq)
             )
 
         for (var_type, var_length), calls in type_buckets.items():
             if len(calls) == 1:
-                call_id, sample, callset, ref_repr, alt_repr = calls[0]
+                call_id, sample, callset, ref_repr, alt_repr, freq = calls[0]
                 stat_counter[(sample, callset, var_type, "singleton")] += 1
                 out_info_singles = (
                     f"{ref_pos}\t{call_id}\t"
                     f"{var_type}\t{var_length}\t"
                     f"{sample}\t{callset}\t"
-                    f"{ref_repr}\t{alt_repr}\n"
+                    f"{ref_repr}\t{alt_repr}\t{freq}\n"
                 )
             else:
                 call_ids = [t[0] for t in calls]
@@ -262,26 +265,29 @@ def check_proper_merge_indel(stat_counter, get_fields, row):
                 callsets = [t[2] for t in calls]
                 ref_reprs = [t[3] for t in calls]
                 alt_reprs = [t[4] for t in calls]
-                for call_id, sample, callset, ref_repr, alt_repr in zip(call_ids, samples, callsets, ref_reprs, alt_reprs):
+                alt_freqs = [t[5] for t in calls]
+                iter_group = (call_ids, samples, callsets, ref_reprs, alt_reprs, alt_freqs)
+                for call_id, sample, callset, ref_repr, alt_repr, alt_freq in zip(*iter_group):
                     stat_counter[(sample, callset, var_type, "multiple")] += 1
                     out_info_multis += (
                         f"{ref_pos}\t{call_id}\t"
                         f"{var_type}\t{var_length}\t"
                         f"{sample}\t{callset}\t"
                         f"{group_id}\t{group_size}\t"
-                        f"{ref_repr}\t{alt_repr}\n"
+                        f"{ref_repr}\t{alt_repr}\t{alt_freq}\n"
                     )
     else:
         # is singleton
         stat_counter[(samples[0], callsets[0], var_types[0], "singleton")] += 1
         ref_repr = f"R{ref_ids[ref_alleles[0]]}"
         alt_repr = f"A{alt_ids[alt_alleles[0]]}"
+        alt_freq = alt_freqs[0]
 
         out_info_singles = (
             f"{ref_pos}\t{call_ids[0]}\t"
             f"{var_types[0]}\t{var_lengths[0]}\t"
             f"{samples[0]}\t{callsets[0]}\t"
-            f"{ref_repr}\t{alt_repr}\n"
+            f"{ref_repr}\t{alt_repr}\t{alt_freq}\n"
         )
     return out_info_singles, out_info_multis
 

@@ -131,7 +131,7 @@ rule reheader_intersect_tables:
                 new_ref_header.append(new_column)
             ref_header = new_ref_header
 
-        input_table_header = callset_header + ref_header + ["distance"]
+        input_table_header = callset_header + ref_header + [f"distance_{wildcards.annotation}"]
         df = pd.read_csv(input.tsv, sep="\t", header=None, names=input_table_header)
         assert "annotation" not in input_table_header
         df.insert(last_callset_column, "annotation", wildcards.annotation)

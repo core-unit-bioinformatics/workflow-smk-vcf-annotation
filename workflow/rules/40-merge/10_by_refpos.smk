@@ -18,8 +18,8 @@ rule prep_merge_table_to_bed:
 
         select_columns = {
             "SV": ["name"],
-            "SNV": ["name", "sample", "callset", "ref_allele_repr", "alt_allele_repr"],
-            "INDEL": ["vartype", "size", "name", "sample", "callset", "ref_allele_repr", "alt_allele_repr"]
+            "SNV": ["name", "sample", "callset", "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"],
+            "INDEL": ["vartype", "size", "name", "sample", "callset", "ref_allele_repr", "alt_allele_repr", "alt_allele_freq"]
         }
         read_columns = ["chrom", "start", "end"] + select_columns[wildcards.variant_group]
         df = pd.read_csv(input.table, sep="\t", header=0, usecols=read_columns)
@@ -54,8 +54,8 @@ rule merge_identical_short_by_refpos:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     params:
         select_columns=lambda wildcards: {
-            "SNV": "4,5,6,7,8",
-            "INDEL": "4,5,6,7,8,9,10"
+            "SNV": "4,5,6,7,8,9",
+            "INDEL": "4,5,6,7,8,9,10,11"
         }[wildcards.variant_group]  # column def: see rule prep_merge_table_to_bed
     shell:
         "bedtools merge -header -delim \"|\" -d -1 -c {params.select_columns} "
