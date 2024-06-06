@@ -121,11 +121,15 @@ rule reheader_intersect_tables:
 
         header_intersect = set(callset_header).intersection(set(ref_header))
         if len(header_intersect) > 0:
-            logerr(f"Callset and reference header not disjoint: {header_intersect}")
-            raise ValueError(
-                "Callset and reference header must be disjoined:\n"
-                f" {input.call_bed} / {input.ref_bed} / {header_intersect}"
-            )
+
+            logerr(f"WARNING: disambiguating callset and reference header using suffix: {wildcards.annotation}")
+            new_ref_header = []
+            for column in ref_header:
+                if column not in callset_header:
+                    continue
+                new_column = f"{column}_{wildcards.annotation}"
+                new_ref_header.append(new_column)
+            ref_header = new_ref_header
 
         input_table_header = callset_header + ref_header + ["distance"]
         df = pd.read_csv(input.tsv, sep="\t", header=None, names=input_table_header)
