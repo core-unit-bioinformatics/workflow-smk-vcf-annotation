@@ -92,7 +92,6 @@ rule reheader_intersect_tables:
 
         callset_header = gzip.open(input.call_bed, "rt").readline().strip().split()
         assert callset_header[0].startswith("#")
-        last_callset_column = len(callset_header)
 
         ref_suffix = pl.Path(input.ref_bed).suffix
         if ref_suffix == ".bed":
@@ -103,38 +102,27 @@ rule reheader_intersect_tables:
             logerr(f"Unexpected file format: {ref_suffix}")
             raise ValueError(f"Cannot read file format: {ref_suffix}")
 
-        ref_header = open_ref(input.ref_bed, open_mode).readline().strip().split()
-        if not ref_header[0].startswith("#"):
-            if len(ref_header) == 4:
-                ref_header = ["chrom2", "start2", "end2", "ref_name"]
-            else:
-                logerr(f"Reference file w/o header: {input.ref_bed}")
-                raise ValueError(f"Malformed reference file (>4 columns, no header): {input.ref_bed}")
-        else:
-            # this would commonly be something like #chrom
-            ref_header[0] = "chrom2"
-            # and disambiguate if needed
-            if ref_header[1] == "start":
-                ref_header[1] = "start2"
-                ref_header[2] = "end2"
-            ref_header = list(map(str.lower, ref_header))
+        ann_header = open_ref(input.ref_bed, open_mode).readline().strip().split()
+        if ann_header[0].startswith("#"):
+            ann_header[0] = f"chrom"
+        try:
+            _ = int(ann_header[1])
+            _ = int(ann_header[2])
+            # columns 1 and 2 are integers --- not a header line
+            logerr(f"Annotation file has no valid header: {input.ref_bed}")
+            raise RuntimeError(f"No valid header line in {input.ref_bed}")
+        except ValueError:
+            # columns 1 and 2 are not integers --- likely valid header line
+            pass
+        ann_header = [f"{column}_{wildcards.annotation}" for column in ann_header]
 
-        header_intersect = set(callset_header).intersection(set(ref_header))
+        header_intersect = set(callset_header).intersection(set(ann_header))
         if len(header_intersect) > 0:
+            logerr(f"Key / column label collision: {header_intersect}")
+            raise RuntimeError(f"Incompatible headers: {input.call_bed} / {input.ref_bed}")
 
-            logerr(f"WARNING: disambiguating callset and reference header using suffix: {wildcards.annotation}")
-            new_ref_header = []
-            for column in ref_header:
-                if column not in callset_header:
-                    continue
-                new_column = f"{column}_{wildcards.annotation}"
-                new_ref_header.append(new_column)
-            ref_header = new_ref_header
-
-        input_table_header = callset_header + ref_header + [f"distance_{wildcards.annotation}"]
+        input_table_header = callset_header + ann_header + [f"distance_{wildcards.annotation}"]
         df = pd.read_csv(input.tsv, sep="\t", header=None, names=input_table_header)
-        assert "annotation" not in input_table_header
-        df.insert(last_callset_column, "annotation", wildcards.annotation)
 
         df.to_csv(output.bed_like, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
@@ -147,7 +135,7 @@ rule run_all_find_closest_annotated_region:
         tables = expand(
             rules.reheader_intersect_tables.output.bed_like,
             ref=["hg38"],
-            annotation=["genes", "hgsvc2", "bands", "ogm", "cosmic", "arriba"],
+            annotation=["genes", "hgsvc2", "bands", "ogm", "cosmic", "arriba", "dgv", "dbvar", "vista", "enccre"],
             variant_group=["SV"],
             callset_type=[
                 "groupcalls", "bycatch-25-75", "bycatch-10-90"
