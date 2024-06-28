@@ -109,8 +109,11 @@ rule reheader_intersect_tables:
             _ = int(ann_header[1])
             _ = int(ann_header[2])
             # columns 1 and 2 are integers --- not a header line
-            logerr(f"Annotation file has no valid header: {input.ref_bed}")
-            raise RuntimeError(f"No valid header line in {input.ref_bed}")
+            if len(ann_header) == 4:
+                ann_header = ["chrom", "start", "end", "name"]
+            else:
+                logerr(f"Annotation file has no valid header: {input.ref_bed}")
+                raise RuntimeError(f"No valid header line in {input.ref_bed}")
         except ValueError:
             # columns 1 and 2 are not integers --- likely valid header line
             pass
