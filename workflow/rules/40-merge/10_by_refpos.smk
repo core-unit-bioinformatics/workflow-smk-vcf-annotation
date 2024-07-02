@@ -12,7 +12,7 @@ rule prep_merge_table_to_bed:
             )
         )
     resources:
-        mem_mb=lambda wildcards, attempt: 2048 * attempt
+        mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt
     run:
         import pandas as pd
 
