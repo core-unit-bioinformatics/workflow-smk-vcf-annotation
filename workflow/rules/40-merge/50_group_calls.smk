@@ -14,7 +14,7 @@ rule create_merged_group_indicator_table:
     conda:
         DIR_ENVS.joinpath("vcftools.yaml")
     resources:
-        mem_mb=lambda wildcards, attempt: 2048 * attempt * attempt,
+        mem_mb=lambda wildcards, attempt: 4096 * attempt * attempt,
         time_hrs=lambda wildcards, attempt: attempt * attempt
     params:
         script=find_script("merge_by_group")
