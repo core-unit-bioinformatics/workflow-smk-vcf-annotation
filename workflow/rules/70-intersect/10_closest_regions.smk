@@ -138,7 +138,7 @@ rule run_all_find_closest_annotated_region:
         tables = expand(
             rules.reheader_intersect_tables.output.bed_like,
             ref=["hg38"],
-            annotation=["genes", "hgsvc2", "bands", "ogm", "cosmic", "arriba", "dgv", "dbvar", "vista", "enccre"],
+            annotation=["genes", "hgsvc2", "bands", "ogm", "cosmic", "arriba", "dgv", "dbvar", "vista", "enccre", "genehancer"],
             variant_group=["SV"],
             callset_type=[
                 "groupcalls", "bycatch-25-75", "bycatch-10-90"
