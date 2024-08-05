@@ -25,7 +25,7 @@ rule norm_enforce_sort_order_callset:
 rule norm_enforce_sort_order_annotation:
     input:
         bedlike = lambda wildcards: DIR_GLOBAL_REF.joinpath(
-            config["annotations"][wildcards.ref][wildcards.annotation]
+            ANNOTATIONS[wildcards.ref][wildcards.annotation]
         ),
         chrom_list = rules.write_ref_chrom_lists.output.listing
     output:
@@ -138,7 +138,7 @@ rule run_all_find_closest_annotated_region:
         tables = expand(
             rules.reheader_intersect_tables.output.bed_like,
             ref=["hg38"],
-            annotation=["genes", "hgsvc2", "bands", "ogm", "cosmic", "arriba", "dgv", "dbvar", "vista", "enccre", "genehancer"],
+            annotation=sorted(ANNOTATIONS["hg38"].keys()),
             variant_group=["SV"],
             callset_type=[
                 "groupcalls", "bycatch-25-75", "bycatch-10-90"
@@ -147,7 +147,7 @@ rule run_all_find_closest_annotated_region:
         tables2 = expand(
             rules.reheader_intersect_tables.output.bed_like,
             ref=["t2tv2"],
-            annotation=["bands", "newseq", "genes", "uniq"],
+            annotation=sorted(ANNOTATIONS["t2tv2"].keys()),
             variant_group=["SV"],
             callset_type=[
                 "groupcalls", "bycatch-25-75", "bycatch-10-90"

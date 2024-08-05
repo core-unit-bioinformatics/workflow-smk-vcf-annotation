@@ -18,3 +18,19 @@ CONSTRAINT_REFERENCES = CONSTRAINT_REFS
 
 KNOWN_VARIANT_GROUPS = ["SV", "SNV", "INDEL"]
 CONSTRAINT_VAR_GROUPS = "(" + "|".join(KNOWN_VARIANT_GROUPS) + ")"
+
+
+# collect annotations from config
+_ANNOTATIONS = config.get("annotations", None):
+if _ANNOTATIONS is None:
+    ANNOTATIONS = dict()
+else:
+    ANNOTATIONS = dict()
+    for ref_genome, annotations in _ANNOTATIONS.items():
+        assert ref_genome in REFERENCES
+        if ref_genome not in ANNOTATIONS:
+            ANNOTATIONS[ref_genome] = dict()
+        for label, ann_file in annotations.items():
+            assert label not in ANNOTATIONS[ref_genome]
+            ANNOTATIONS[ref_genome][label] = ann_file
+
