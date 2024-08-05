@@ -21,7 +21,7 @@ CONSTRAINT_VAR_GROUPS = "(" + "|".join(KNOWN_VARIANT_GROUPS) + ")"
 
 
 # collect annotations from config
-_ANNOTATIONS = config.get("annotations", None):
+_ANNOTATIONS = config.get("annotations", None)
 if _ANNOTATIONS is None:
     ANNOTATIONS = dict()
 else:
