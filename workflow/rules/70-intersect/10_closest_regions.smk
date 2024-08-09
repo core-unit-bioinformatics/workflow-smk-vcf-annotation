@@ -27,7 +27,7 @@ rule norm_enforce_sort_order_annotation:
         bedlike = lambda wildcards: DIR_GLOBAL_REF.joinpath(
             ANNOTATIONS[wildcards.ref][wildcards.annotation]
         ),
-        chrom_list = rules.write_ref_chrom_lists.output.listing
+        chrom_list = rules.write_ref_chrom_lists.output.regexp
     output:
         bedlike = temp(
             DIR_PROC.joinpath(

@@ -8,6 +8,9 @@ rule write_ref_chrom_lists:
         listing = DIR_PROC.joinpath(
             "00-prepare/ref_chroms/{ref}.keep-chroms.txt"
         ),
+        regexp = DIR_PROC.joinpath(
+            "00-prepare/ref_chroms/{ref}.keep-chroms.re.lst"
+        ),
     wildcard_constraints:
         ref=CONSTRAINT_REFERENCES
     run:
@@ -15,6 +18,9 @@ rule write_ref_chrom_lists:
         # TODO support var sets
         with open(output.listing, "w") as dump:
             _ = dump.write("\n".join(ref_chroms) + "\n")
+        # 2024-08-09: fix to ensure only matching at beginning of the line
+        with open(output.regexp, "w") as dump:
+            _ = dump.write("\n".join([f"^{c}" for c in ref_chroms]) + "\n")
     # END OF RUN BLOCK
 
 
