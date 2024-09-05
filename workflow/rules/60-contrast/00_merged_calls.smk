@@ -26,7 +26,7 @@ rule get_grouped_multi_call_listing:
             "{ref}.{variant_group}.contrast.{contrast}.group-info.txt"
         )
     resources:
-        mem_mb=lambda wildcards, attempt: 1024 * attempt
+        mem_mb=lambda wildcards, attempt: (4096 if wildcards.variant_group == "SNV" else 1024) * attempt
     run:
         import pandas as pd
         df = pd.read_csv(input.merged_calls, sep="\t", header=0, usecols=["group_id", "sample_set"])
