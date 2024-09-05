@@ -135,7 +135,7 @@ rule run_all_find_closest_annotated_region:
     # TODO
     # this must be turned into a configurable pull
     input:
-        tables = expand(
+        tables_hg38_sv = expand(
             rules.reheader_intersect_tables.output.bed_like,
             ref=["hg38"],
             annotation=sorted(ANNOTATIONS["hg38"].keys()),
@@ -144,12 +144,30 @@ rule run_all_find_closest_annotated_region:
                 "groupcalls", "bycatch-25-75", "bycatch-10-90"
             ] + CONTRAST_CALLSET_LABELS
         ),
-        tables2 = expand(
+        tables_hg38_short = expand(
+            rules.reheader_intersect_tables.output.bed_like,
+            ref=["hg38"],
+            annotation=sorted(ANNOTATIONS["hg38"].keys()),
+            variant_group=["SNV", "INDEL"],
+            callset_type=[
+                "groupcalls"
+            ] + CONTRAST_CALLSET_LABELS
+        ),
+        tables_t2t_sv = expand(
             rules.reheader_intersect_tables.output.bed_like,
             ref=["t2tv2"],
             annotation=sorted(ANNOTATIONS["t2tv2"].keys()),
             variant_group=["SV"],
             callset_type=[
                 "groupcalls", "bycatch-25-75", "bycatch-10-90"
+            ] + CONTRAST_CALLSET_LABELS
+        ),
+        tables_t2t_short = expand(
+            rules.reheader_intersect_tables.output.bed_like,
+            ref=["t2tv2"],
+            annotation=sorted(ANNOTATIONS["t2tv2"].keys()),
+            variant_group=["SNV", "INDEL"],
+            callset_type=[
+                "groupcalls"
             ] + CONTRAST_CALLSET_LABELS
         )

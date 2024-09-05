@@ -188,7 +188,7 @@ rule run_all_contrast_merged_group_calls:
             rules.dump_contrast_merged_indicator_table_to_bedlike.output.bed_like,
             build_valid_contrast_group_combinations,
             ref=REFERENCE_GENOMES,
-            variant_group=["SV", "INDEL"],
+            variant_group=["SV", "INDEL", "SNV"],
             contrast=list(CONTRAST.keys()),
             group_id=CONTRAST_GROUPS1 + CONTRAST_GROUPS2 + ["other"]
         )
