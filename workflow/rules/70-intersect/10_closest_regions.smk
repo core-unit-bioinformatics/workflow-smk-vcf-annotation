@@ -85,6 +85,8 @@ rule reheader_intersect_tables:
     wildcard_constraints:
         ref=CONSTRAINT_REFS,
         variant_group=CONSTRAINT_VAR_GROUPS
+    resources:
+        mem_mb=lambda wildcards, attempt: (2048 if wildcards.variant_group == "SNV" else 1024) * attempt
     run:
         import gzip
         import pathlib as pl
