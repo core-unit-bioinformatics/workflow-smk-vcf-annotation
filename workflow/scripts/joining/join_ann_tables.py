@@ -46,17 +46,25 @@ def parse_command_line():
         default=pl.Path("joined.tsv.gz")
     )
 
+    parser.add_argument(
+        "--size-limit", "-l",
+        type=int,
+        default=int(1e5),
+        dest="size_limit"
+    )
+
     args = parser.parse_args()
 
     return args
 
 
-def read_table(filepath):
+def read_table(filepath, size_limit):
 
     df = pd.read_csv(filepath, sep="\t", header=0)
 
-    # we hard drop spurious calls >1 Mbp
-    df = df.loc[df["size"] < int(1e6), :].copy()
+    # we hard drop spurious calls that are very
+    # large (by default: 100+ kbp)
+    df = df.loc[df["size"] < size_limit, :].copy()
 
     dist_column = df.columns[-1]
     assert dist_column.startswith("distance_")
@@ -104,12 +112,12 @@ def get_deselect_call_ids(negative_table, dist_criterion, dist_cutoff):
     return set(deselect)
 
 
-def build_negative_set(negative_tables, dist_criterion, dist_cutoff):
+def build_negative_set(negative_tables, dist_criterion, dist_cutoff, size_limit):
 
     deselect_calls = set()
 
     for negative_table in negative_tables:
-        df_neg = read_table(negative_table)
+        df_neg = read_table(negative_table, size_limit)
         delesect_from_table = get_deselect_call_ids(df_neg, dist_criterion, dist_cutoff)
         deselect_calls = deselect_calls.union(delesect_from_table)
 
@@ -121,12 +129,12 @@ def main():
     args = parse_command_line()
 
     deselect_calls = build_negative_set(
-        args.negative_tables, args.distance_criterion, args.distance_cutoff
+        args.negative_tables, args.distance_criterion, args.distance_cutoff, args.size_limit
     )
 
     joined = None
     for annotation_table in sorted(args.positive_tables):
-        ann_data = read_table(annotation_table)
+        ann_data = read_table(annotation_table, args.size_limit)
         ann_data = ann_data.loc[
             ~ann_data["group_id"].isin(deselect_calls),
             :
