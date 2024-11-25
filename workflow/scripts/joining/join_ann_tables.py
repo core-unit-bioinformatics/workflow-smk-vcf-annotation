@@ -171,6 +171,12 @@ def main():
 
     args.output.parent.mkdir(exist_ok=True, parents=True)
     joined.sort_values(["#chrom", "start", "end"], inplace=True)
+
+    # drop all columns that are empty
+    empty_columns = joined.columns[pd.isnull(joined).all(axis=0).values]
+    if len(empty_columns) > 0:
+        joined.drop(empty_columns, axis=1, inplace=True)
+
     joined.to_csv(args.output, sep="\t", header=True, index=False, na_rep='n/a')
 
     return 0
