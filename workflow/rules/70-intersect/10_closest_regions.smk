@@ -150,6 +150,9 @@ rule merge_and_filter_annotations:
             "annotations", "merged_filtered", "closest_region",
             "{ref}.{variant_group}.{callset_type}.closest.merge-filter.bed.gz"
         )
+    wildcard_constraints:
+        ref=CONSTRAINT_REFS,
+        variant_group=CONSTRAINT_VAR_GROUPS
     conda:
         DIR_ENVS.joinpath("pyutils.yaml")
     resources:
