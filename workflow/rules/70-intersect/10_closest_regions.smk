@@ -133,6 +133,33 @@ rule reheader_intersect_tables:
     # END OF RUN BLOCK
 
 
+rule merge_and_filter_annotations:
+    input:
+        positives = lambda wildcards: expand(
+            rules.reheader_intersect_tables.output.bed_like,
+            annotation=ANNOTATION_FILTERS[wildcards.ref]["positive"],
+            allow_missing=True
+        ),
+        negatives = lambda wildcards: expand(
+            rules.reheader_intersect_tables.output.bed_like,
+            annotation=ANNOTATION_FILTERS[wildcards.ref]["negative"],
+            allow_missing=True
+        )
+    output:
+        bed_like = DIR_RES.joinpath(
+            "annotations", "merged_filtered", "closest_region",
+            "{ref}.{variant_group}.{callset_type}.closest.{annotation}.bed.gz"
+        )
+    conda:
+        DIR_ENVS.joinpath("pyutils.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 8192 * attempt
+    params:
+        script=find_script("join_ann_tables.py")
+    shell:
+        "{params.script} --positive {input.positives} --negative {input.negative} --output {output.bed_like}"
+
+
 rule run_all_find_closest_annotated_region:
     # TODO
     # this must be turned into a configurable pull
@@ -172,4 +199,10 @@ rule run_all_find_closest_annotated_region:
             callset_type=[
                 "groupcalls"
             ] + CONTRAST_CALLSET_LABELS
+        ),
+        merged_filtered = expand(
+            rules.merge_and_filter_annotations.output.bed_like,
+            ref=["hg38"],
+            variant_group=["SV"],
+            callset_type=["groupcalls"] + CONTRAST_CALLSET_LABELS
         )
