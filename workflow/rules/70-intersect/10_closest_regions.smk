@@ -148,7 +148,7 @@ rule merge_and_filter_annotations:
     output:
         bed_like = DIR_RES.joinpath(
             "annotations", "merged_filtered", "closest_region",
-            "{ref}.{variant_group}.{callset_type}.closest.{annotation}.bed.gz"
+            "{ref}.{variant_group}.{callset_type}.closest.merge-filter.bed.gz"
         )
     conda:
         DIR_ENVS.joinpath("pyutils.yaml")
