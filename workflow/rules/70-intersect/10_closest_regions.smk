@@ -160,7 +160,7 @@ rule merge_and_filter_annotations:
     params:
         script=find_script("join_ann_tables.py")
     shell:
-        "{params.script} --positive {input.positives} --negative {input.negative} --output {output.bed_like}"
+        "{params.script} --positive {input.positives} --negative {input.negatives} --output {output.bed_like}"
 
 
 rule run_all_find_closest_annotated_region:
