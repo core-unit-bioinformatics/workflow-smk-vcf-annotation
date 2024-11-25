@@ -41,7 +41,7 @@ if _ANNOTATION_FILTERS is None:
     ANNOTATION_FILTERS = dict()
 else:
     ANNOTATION_FILTERS = dict()
-    for ref_genome, filter_lists in ANNOTATION_FILTERS.items():
+    for ref_genome, filter_lists in _ANNOTATION_FILTERS.items():
         pos_list = filter_lists.get("positive", [])
         neg_list = filter_lists.get("negative", [])
         ANNOTATION_FILTERS[ref_genome] = {
