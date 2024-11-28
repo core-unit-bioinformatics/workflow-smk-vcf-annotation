@@ -70,6 +70,10 @@ def read_table(filepath, size_limit):
     assert dist_column.startswith("distance_")
     annotation_name = dist_column.split("_")[-1]
 
+    # fix: bedtools intersect may create a dist of -1
+    # for non-matching regions --- drop those lines immediately
+    df = df.loc[df[dist_column] >= 0, :].copy()
+
     # some columns that can always be dropped
     hard_drop = ["chrom", "start", "end", "score", "strand", "chrom"]
     drop_from_ann = [f"{column}_{annotation_name}" for column in hard_drop]
