@@ -91,15 +91,17 @@ def get_deselect_call_ids(negative_table, dist_criterion, dist_cutoff):
 
     if dist_criterion == "relative":
         # relative cutoff
-        # SIZE_OF_CALL * DIST_CUTOFF < DISTANCE
+        # DISTANCE < SIZE_OF_CALL * DIST_CUTOFF
         # Example default values:
         # 1000 * 0.1 => 100
+        # leads to:
+        # DISTANCE < 100 => discard call
         # if there is an entry in a negative annotation table
         # closer than 100 bp, the call is discarded
         # (the call group ID is included in the discard set)
         assert dist_cutoff < 1
         deselect = negative_table.loc[
-            negative_table["size"] * dist_cutoff < negative_table[dist_column],
+            negative_table[dist_column] < negative_table["size"] * dist_cutoff,
             "group_id"
         ].values
     else:
