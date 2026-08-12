@@ -228,11 +228,34 @@ class Variant:
         elif "[" in alt_allele or "]" in alt_allele:
             # NB: the lookahead here is important to avoid
             # matching allele specs or N if present
-            chrom2 = re.search("(chr)?[0-9A-Z]+(?=\:)", alt_allele)
-            if chrom2 is None:
-                pass
+
+            # 2026-08-05 attempted fix
+            # for weird chromosome names that are not filtered by vembrane
+
+            #chrom2 = re.search("(chr)?[0-9A-Z]+(?=\:)", alt_allele)
+            #if chrom2 is None:
+            #    pass
+            #else:
+            #    chrom2 = chrom2.group(0)
+
+            # begin of fix
+            chrom2_raw = alt_allele.split(":")[0].strip("[]")
+            fwd, rev = None, None
+            try:
+                fwd = chrom2_raw.index("[")
+            except ValueError:
+                fwd = 0
+            try:
+                rev = chrom2_raw.index("]")
+            except ValueError:
+                rev = 0
+            if fwd == rev == 0:
+                chrom2 = chrom2_raw
             else:
-                chrom2 = chrom2.group(0)
+                starts_here = max(fwd, rev) + 1
+                chrom2 = chrom2_raw[starts_here:]
+            # end of fix
+
             chrom2_coord = re.search("[0-9]+", alt_allele.split(":")[1])
             if chrom2_coord is None:
                 raise ValueError(f"Cannot find BND chrom2 coordinates: {alt_allele}")
